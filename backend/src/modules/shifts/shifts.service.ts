@@ -13,7 +13,7 @@ import { AssignStaffDto } from './dto/assign-staff.dto';
 import { PublishScheduleDto } from './dto/publish-schedule.dto';
 import { ShiftResponseDto } from './dto/shift-response.dto';
 import { ERROR_CODES } from '../../common/constants/error-codes.constants';
-import { NotificationService } from '../notifications/notification.service';
+import { NotificationsService } from '../notifications/notifications.service'; // Fix: Change to NotificationsService
 import { AuditService } from '../audit/audit.service';
 import { ShiftStatus } from '@prisma/client';
 import { differenceInHours, isBefore, addHours } from 'date-fns';
@@ -23,7 +23,7 @@ export class ShiftsService {
   constructor(
     private prisma: PrismaService,
     private validator: ShiftConstraintsValidator,
-    private notificationService: NotificationService,
+    private notificationsService: NotificationsService,
     private auditService: AuditService,
   ) {}
 
@@ -167,21 +167,22 @@ export class ShiftsService {
     ]);
 
     const transformedShifts = shifts.map(shift => {
-      const dto = new ShiftResponseDto(shift);
-      
-      // Calculate assigned count per requirement
-      dto.requirements = shift.requirements.map(req => ({
+    // Use type assertion to tell TypeScript this is safe
+    const dto = shift as unknown as ShiftResponseDto;
+    
+    // Calculate assigned count per requirement
+    dto.requirements = shift.requirements.map((req: any) => ({
         ...req,
         assignedCount: req.assignments.length,
-      }));
-      
-      dto.assignedCount = shift._count.assignments;
-      dto.openSpots = shift.requirements.reduce(
-        (sum, req) => sum + (req.headcount - req.assignments.length), 
+    }));
+    
+    dto.assignedCount = shift._count.assignments;
+    dto.openSpots = shift.requirements.reduce(
+        (sum: number, req: any) => sum + (req.headcount - req.assignments.length), 
         0
-      );
-      
-      return dto;
+    );
+    
+    return dto;
     });
 
     return {
@@ -251,17 +252,17 @@ export class ShiftsService {
       });
     }
 
-    const dto = new ShiftResponseDto(shift);
+    const dto = shift as unknown as ShiftResponseDto;
     
     // Calculate assigned count per requirement
-    dto.requirements = shift.requirements.map(req => ({
+    dto.requirements = shift.requirements.map((req: any) => ({
       ...req,
       assignedCount: req.assignments.length,
     }));
     
     dto.assignedCount = shift._count.assignments;
     dto.openSpots = shift.requirements.reduce(
-      (sum, req) => sum + (req.headcount - req.assignments.length), 
+      (sum: number, req: any) => sum + (req.headcount - req.assignments.length), 
       0
     );
 
@@ -300,7 +301,7 @@ export class ShiftsService {
       orderBy: { startTime: 'asc' },
     });
 
-    return shifts.map(shift => new ShiftResponseDto(shift));
+    return shifts.map(shift => shift as unknown as ShiftResponseDto);
   }
 
   // ========== UPDATE SHIFTS ==========
@@ -385,9 +386,12 @@ export class ShiftsService {
     });
 
     // Notify assigned staff if shift changed
-    if (shift.assignments?.length) {
-      for (const assignment of shift.assignments) {
-        await this.notificationService.create({
+    if (shift.requirements) {
+  const assignments = shift.requirements.flatMap((r: any) => r.assignments || []);
+  if (assignments.length > 0) {
+    for (const assignment of assignments) {
+      if (assignment.user) { // Add this check
+        await this.notificationsService.create({
           userId: assignment.user.id,
           type: 'SHIFT_CHANGED',
           title: 'Shift Updated',
@@ -396,6 +400,8 @@ export class ShiftsService {
         });
       }
     }
+  }
+}
 
     return completeShift;
   }
@@ -473,7 +479,7 @@ export class ShiftsService {
     });
 
     // Send notification to assigned staff
-    await this.notificationService.create({
+    await this.notificationsService.create({
       userId: assignStaffDto.userId,
       type: 'SHIFT_ASSIGNED',
       title: 'New Shift Assignment',
@@ -550,7 +556,7 @@ export class ShiftsService {
     });
 
     // Send notification
-    await this.notificationService.create({
+    await this.notificationsService.create({
       userId: assignment.userId,
       type: 'SHIFT_CHANGED',
       title: 'Shift Assignment Removed',
@@ -635,7 +641,7 @@ export class ShiftsService {
       for (const assignment of shift.assignments) {
         if (!notifiedUsers.has(assignment.userId)) {
           notifiedUsers.add(assignment.userId);
-          await this.notificationService.create({
+          await this.notificationsService.create({
             userId: assignment.userId,
             type: 'SCHEDULE_PUBLISHED',
             title: 'Schedule Published',
@@ -649,7 +655,8 @@ export class ShiftsService {
     return {
       success: true,
       message: `Published ${shifts.length} shifts successfully`,
-      data: updatedShifts.map(s => new ShiftResponseDto(s)),
+      // In publishShifts method (around line 655)
+      data: updatedShifts.map(s => s as unknown as ShiftResponseDto),
       timestamp: new Date().toISOString(),
     };
   }
@@ -681,7 +688,7 @@ export class ShiftsService {
       });
     }
 
-    if (shift.assignedCount > 0) {
+    if (shift.assignedCount && shift.assignedCount > 0) {
       throw new ForbiddenException({
         success: false,
         error: {
@@ -751,7 +758,7 @@ export class ShiftsService {
         openSpots,
         fillRate: totalSpots > 0 ? (filledSpots / totalSpots) * 100 : 0,
       },
-      shifts: shifts.map(s => new ShiftResponseDto(s)),
+      shifts: shifts.map(s => s as unknown as ShiftResponseDto),
       timestamp: new Date().toISOString(),
     };
   }
@@ -822,4 +829,5 @@ export class ShiftsService {
       timestamp: new Date().toISOString(),
     };
   }
+  
 }

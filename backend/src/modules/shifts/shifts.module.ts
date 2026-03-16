@@ -6,7 +6,7 @@ import { ShiftConstraintsValidator } from './validators/shift-constraints.valida
 import { PrismaService } from '../../prisma/prisma.service';
 
 // These will be created later
-import { NotificationService } from '../notifications/notification.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { AuditService } from '../audit/audit.service';
 
 @Module({
@@ -15,7 +15,7 @@ import { AuditService } from '../audit/audit.service';
     ShiftsService,
     ShiftConstraintsValidator,
     PrismaService,
-    NotificationService,
+    NotificationsService,
     AuditService,
   ],
   exports: [ShiftsService],

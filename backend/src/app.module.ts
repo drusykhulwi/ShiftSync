@@ -6,9 +6,10 @@ import { PrismaService } from './prisma/prisma.service';
 import { CommonModule } from './common/common.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { LocationsModule } from './modules/locations/locations.module'; // Add this
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
-import { LocationAccessGuard } from './common/guards/location-access.guard'; // Add this
+import { LocationAccessGuard } from './common/guards/location-access.guard';
 import { CorrelationIdMiddleware } from './common/middlewares/correlation-id.middleware';
 import { LoggingMiddleware } from './common/middlewares/logging.middleware';
 
@@ -18,6 +19,7 @@ import { LoggingMiddleware } from './common/middlewares/logging.middleware';
     CommonModule,
     AuthModule,
     UsersModule,
+    LocationsModule, // Add this
   ],
   providers: [
     PrismaService,
@@ -31,7 +33,7 @@ import { LoggingMiddleware } from './common/middlewares/logging.middleware';
     },
     {
       provide: APP_GUARD,
-      useClass: LocationAccessGuard, // Add this but it will only run when decorator is present
+      useClass: LocationAccessGuard,
     },
   ],
 })

@@ -1,0 +1,28 @@
+// backend/src/common/constants/error-codes.constants.ts
+export const ERROR_CODES = {
+  // Auth errors (1000-1999)
+  UNAUTHORIZED: 1000,
+  INVALID_CREDENTIALS: 1001,
+  TOKEN_EXPIRED: 1002,
+  
+  // User errors (2000-2999)
+  USER_NOT_FOUND: 2000,
+  USER_ALREADY_EXISTS: 2001,
+  
+  // Shift errors (3000-3999)
+  SHIFT_NOT_FOUND: 3000,
+  SHIFT_CONFLICT: 3001,
+  INSUFFICIENT_SKILL: 3002,
+  LOCATION_MISMATCH: 3003,
+  UNAVAILABLE_STAFF: 3004,
+  OVERTIME_LIMIT: 3005,
+  
+  // Swap errors (4000-4999)
+  SWAP_NOT_FOUND: 4000,
+  SWAP_EXPIRED: 4001,
+  MAX_PENDING_REQUESTS: 4002,
+  
+  // Validation errors (9000-9999)
+  VALIDATION_ERROR: 9000,
+  INVALID_INPUT: 9001,
+} as const;

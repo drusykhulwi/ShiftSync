@@ -11,7 +11,8 @@ import { SkillsModule } from './modules/skills/skills.module';
 import { ShiftsModule } from './modules/shifts/shifts.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AuditModule } from './modules/audit/audit.module';
-import { SwapRequestsModule } from './modules/swap-requests/swap-requests.module'; // Add this
+import { SwapRequestsModule } from './modules/swap-requests/swap-requests.module';
+import { OvertimeModule } from './modules/overtime/overtime.module'; // Add this
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { LocationAccessGuard } from './common/guards/location-access.guard';
@@ -29,7 +30,8 @@ import { LoggingMiddleware } from './common/middlewares/logging.middleware';
     ShiftsModule,
     NotificationsModule,
     AuditModule,
-    SwapRequestsModule, // Add this
+    SwapRequestsModule,
+    OvertimeModule, // Add this
   ],
   providers: [
     PrismaService,

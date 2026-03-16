@@ -7,9 +7,9 @@ import {
   NotFoundException 
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { PrismaService } from '../../prisma/prisma.service'; 
+import { PrismaService } from '../../prisma/prisma.service';
 import { ERROR_CODES } from '../constants/error-codes.constants';
-
+import { LOCATION_ACCESS_KEY, LocationAccessOptions } from '../decorators/location-access.decorator';
 
 @Injectable()
 export class LocationAccessGuard implements CanActivate {
@@ -21,10 +21,50 @@ export class LocationAccessGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    const locationId = request.params.locationId || request.body.locationId;
+    
+    // If no user, let other guards handle it
+    if (!user) {
+      return true;
+    }
 
+    // Get location access options from decorator
+    const locationOptions = this.reflector.getAllAndOverride<LocationAccessOptions>(
+      LOCATION_ACCESS_KEY,
+      [context.getHandler(), context.getClass()]
+    );
+
+    // If no location decorator, skip this guard
+    if (!locationOptions) {
+      return true;
+    }
+
+    // Get locationId from params or body based on options
+    let locationId: string | undefined;
+    
+    if (locationOptions.param) {
+      locationId = request.params[locationOptions.param];
+    } else if (locationOptions.body) {
+      locationId = request.body[locationOptions.body];
+    } else {
+      // Default to 'locationId' param
+      locationId = request.params.locationId || request.body.locationId;
+    }
+
+    // If location is required but not provided
+    if (locationOptions.required !== false && !locationId) {
+      throw new NotFoundException({
+        success: false,
+        error: {
+          code: ERROR_CODES.VALIDATION_ERROR,
+          message: 'Location ID is required',
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // If no locationId, skip (for optional location access)
     if (!locationId) {
-      return true; // No location specified = skip check
+      return true;
     }
 
     // Admin can access all locations

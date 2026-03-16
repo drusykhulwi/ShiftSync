@@ -19,7 +19,7 @@ export const NOTIFICATION_TYPES = {
   LOCATION_TRANSFER: 'LOCATION_TRANSFER',
 } as const;
 
-export type NotificationType = typeof NOTIFICATION_TYPES[keyof typeof NOTIFICATION_TYPES];
+export type NOTIFICATION_TYPES = typeof NOTIFICATION_TYPES[keyof typeof NOTIFICATION_TYPES];
 
 export const NOTIFICATION_PRIORITY = {
   LOW: 0,

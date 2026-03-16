@@ -1,4 +1,5 @@
 // backend/src/modules/shifts/shifts.controller.ts
+// backend/src/modules/shifts/shifts.controller.ts
 import { 
   Controller, 
   Get, 
@@ -10,7 +11,8 @@ import {
   Query,
   UseGuards,
   HttpCode,
-  HttpStatus 
+  HttpStatus,
+  ForbiddenException  
 } from '@nestjs/common';
 import { ShiftsService } from './shifts.service';
 import { CreateShiftDto } from './dto/create-shift.dto';

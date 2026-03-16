@@ -430,45 +430,39 @@ export class SkillsService {
     };
   }
 
-  async findOneCertification(id: string) {
-    const certification = await this.prisma.certification.findUnique({
-      where: { id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-          },
+  
+
+async findOneCertification(id: string) {
+const certification = await this.prisma.certification.findUnique({
+    where: { id },
+    include: {
+    user: {
+        select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
         },
-        skill: true,
-        location: true,
-        certifiedByUser: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-      },
+    },
+    skill: true,
+    location: true,
+    },
+});
+
+if (!certification) {
+    throw new NotFoundException({
+    success: false,
+    error: {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: 'Certification not found',
+    },
+    timestamp: new Date().toISOString(),
     });
+}
 
-    if (!certification) {
-      throw new NotFoundException({
-        success: false,
-        error: {
-          code: ERROR_CODES.VALIDATION_ERROR,
-          message: 'Certification not found',
-        },
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    return new CertificationResponseDto(certification);
-  }
+return new CertificationResponseDto(certification);
+}
 
   async revokeCertification(id: string, userId: string) {
     const certification = await this.findOneCertification(id);

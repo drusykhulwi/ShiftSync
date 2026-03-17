@@ -78,7 +78,7 @@ export const AssignmentDialog: React.FC<AssignmentDialogProps> = ({
         <Select
           label="Select Requirement"
           value={requirementOptions.find(opt => opt.value === selectedRequirement) || null}
-          onChange={(opt) => setSelectedRequirement(opt?.value || '')}
+          onChange={(opt) => setSelectedRequirement(opt?.value?.toString() || '')}
           options={requirementOptions}
           placeholder="Choose a position to fill"
         />
@@ -86,7 +86,7 @@ export const AssignmentDialog: React.FC<AssignmentDialogProps> = ({
         <Select
           label="Select Staff Member"
           value={staffOptions.find(opt => opt.value === selectedStaff) || null}
-          onChange={(opt) => setSelectedStaff(opt?.value || '')}
+          onChange={(opt) => setSelectedStaff(opt?.value?.toString() || '')}
           options={staffOptions}
           placeholder="Choose staff member to assign"
         />

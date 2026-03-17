@@ -10,7 +10,7 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger, Inject, forwardRef } from '@nestjs/common'; // Add Inject and forwardRef
 import { NotificationsService } from './notifications.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -30,10 +30,12 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   private userSockets: Map<string, string[]> = new Map(); // userId -> socketIds[]
 
   constructor(
+    @Inject(forwardRef(() => NotificationsService)) // Add forwardRef here too
     private notificationsService: NotificationsService,
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
+
 
   async handleConnection(client: Socket) {
     try {

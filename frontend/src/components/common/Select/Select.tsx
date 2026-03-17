@@ -2,8 +2,8 @@
 import React, { Fragment } from 'react';
 import { Listbox, Transition } from '@headlessui/react';
 
-interface Option {
-  value: string;
+export interface Option {
+  value: string | number;
   label: string;
 }
 

@@ -57,11 +57,11 @@ export const SelectResponder: React.FC<SelectResponderProps> = ({
         <div className="text-center py-4">Loading staff...</div>
       ) : (
         <Select
-          label="Select Staff Member"
-          value={staffOptions.find(opt => opt.value === selectedUserId) || null}
-          onChange={(opt) => onSelect(opt?.value || '')}
-          options={staffOptions}
-          placeholder="Choose who to swap with"
+        label="Select Staff Member"
+        value={staffOptions.find(opt => opt.value === selectedUserId) || null}
+        onChange={(opt) => onSelect(opt?.value as string || '')}
+        options={staffOptions}
+        placeholder="Choose who to swap with"
         />
       )}
     </div>

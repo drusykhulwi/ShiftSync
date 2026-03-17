@@ -104,8 +104,8 @@ export const FairnessDashboard: React.FC<FairnessDashboardProps> = ({ locationId
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Select
             label="Location"
-            value={locationOptions.find(opt => opt.value === selectedLocation) || null}
-            onChange={(opt) => setSelectedLocation(opt?.value || '')}
+            value={locationOptions.find(opt => opt.value === selectedLocation) || locationOptions[0]}
+            onChange={(opt) => setSelectedLocation(opt?.value as string || '')}
             options={locationOptions}
             placeholder="Select location"
           />

@@ -86,10 +86,10 @@ export const RiskDashboard: React.FC = () => {
           </div>
           <div className="w-64">
             <Select
-              value={locationOptions.find(opt => opt.value === selectedLocation) || null}
-              onChange={(opt) => setSelectedLocation(opt?.value || '')}
-              options={locationOptions}
-              placeholder="Select location"
+            value={locationOptions.find(opt => opt.value === selectedLocation) || null}
+            onChange={(opt) => setSelectedLocation(opt?.value as string || '')}
+            options={locationOptions}
+            placeholder="Select location"
             />
           </div>
         </div>

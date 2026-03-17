@@ -103,10 +103,10 @@ export const CreateSwapRequest: React.FC<CreateSwapRequestProps> = ({
           <Select
             label="Select Shift"
             value={shiftOptions.find(opt => opt.value === selectedShift) || null}
-            onChange={(opt) => setSelectedShift(opt?.value || '')}
+            onChange={(opt) => setSelectedShift(opt?.value as string || '')}
             options={shiftOptions}
             placeholder="Choose a shift to swap"
-          />
+            />
 
           {selectedShiftData && (
             <SelectResponder
@@ -139,10 +139,10 @@ export const CreateSwapRequest: React.FC<CreateSwapRequestProps> = ({
           <Select
             label="Select Shift"
             value={shiftOptions.find(opt => opt.value === selectedShift) || null}
-            onChange={(opt) => setSelectedShift(opt?.value || '')}
+            onChange={(opt) => setSelectedShift(opt?.value as string || '')}
             options={shiftOptions}
             placeholder="Choose a shift to drop"
-          />
+           />
 
           {selectedShiftData && (
             <DropShift

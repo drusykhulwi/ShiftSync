@@ -69,16 +69,23 @@ export const AvailableShifts: React.FC<AvailableShiftsProps> = ({ onPickup }) =>
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <Select
-          label="Location"
-          value={locationOptions.find(opt => opt.value === filters.locationId) || locationOptions[0]}
-          onChange={(opt) => setFilters(prev => ({ ...prev, locationId: opt?.value || '' }))}
-          options={locationOptions}
+        label="Location"
+        value={locationOptions.find(opt => opt.value === filters.locationId) || locationOptions[0]}
+        onChange={(opt) => {
+            const value = opt?.value;
+            setFilters(prev => ({ ...prev, locationId: value !== undefined ? String(value) : '' }));
+        }}
+        options={locationOptions}
         />
+
         <Select
-          label="Skill"
-          value={skillOptions.find(opt => opt.value === filters.skillId) || skillOptions[0]}
-          onChange={(opt) => setFilters(prev => ({ ...prev, skillId: opt?.value || '' }))}
-          options={skillOptions}
+        label="Skill"
+        value={skillOptions.find(opt => opt.value === filters.skillId) || skillOptions[0]}
+        onChange={(opt) => {
+            const value = opt?.value;
+            setFilters(prev => ({ ...prev, skillId: value !== undefined ? String(value) : '' }));
+        }}
+        options={skillOptions}
         />
       </div>
 

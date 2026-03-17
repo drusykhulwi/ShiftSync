@@ -146,18 +146,18 @@ export const LocationForm: React.FC<LocationFormProps> = ({
           <Select
             label="Country"
             value={COUNTRIES.find(c => c.value === formData.country) || COUNTRIES[0]}
-            onChange={(opt) => handleChange('country', opt?.value || 'USA')}
+            onChange={(opt) => handleChange('country', opt?.value as string || 'USA')}
             options={COUNTRIES}
             required
-          />
+            />
         </div>
 
         <Select
-          label="Timezone"
-          value={TIMEZONES.find(tz => tz.value === formData.timezone) || TIMEZONES[0]}
-          onChange={(opt) => handleChange('timezone', opt?.value || 'America/New_York')}
-          options={TIMEZONES}
-          required
+        label="Timezone"
+        value={TIMEZONES.find(tz => tz.value === formData.timezone) || TIMEZONES[0]}
+        onChange={(opt) => handleChange('timezone', opt?.value as string || 'America/New_York')}
+        options={TIMEZONES}
+        required
         />
 
         <div className="grid grid-cols-2 gap-4">

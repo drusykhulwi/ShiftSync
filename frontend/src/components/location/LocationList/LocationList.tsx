@@ -4,7 +4,7 @@ import { Location } from '../../../types/location.types';
 import { LocationCard } from '../LocationCard/LocationCard';
 import { Input } from '../../common/Input';
 import { Button } from '../../common/Button';
-import { Select } from '../../common/Select';
+import { Select, Option } from '../../common/Select';
 
 interface LocationListProps {
   locations: Location[];
@@ -36,7 +36,7 @@ export const LocationList: React.FC<LocationListProps> = ({
     return matchesSearch && matchesStatus;
   });
 
-  const statusOptions = [
+  const statusOptions: Option[] = [
     { value: 'all', label: 'All Locations' },
     { value: 'active', label: 'Active Only' },
     { value: 'inactive', label: 'Inactive Only' },
@@ -52,11 +52,13 @@ export const LocationList: React.FC<LocationListProps> = ({
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Select
-          value={statusOptions.find(opt => opt.value === statusFilter) || statusOptions[0]}
-          onChange={(opt) => setStatusFilter(opt?.value || 'all')}
-          options={statusOptions}
-        />
+        <div className="w-48">
+          <Select
+            value={statusOptions.find(opt => opt.value === statusFilter) || statusOptions[0]}
+            onChange={(opt) => setStatusFilter(opt?.value as string || 'all')}
+            options={statusOptions}
+          />
+        </div>
         <Button onClick={onAddClick}>+ Add Location</Button>
       </div>
 

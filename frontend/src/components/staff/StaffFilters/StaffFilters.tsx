@@ -74,21 +74,21 @@ export const StaffFilters: React.FC<StaffFiltersProps> = ({
         <Select
           label="Skill"
           value={skillOptions.find(opt => opt.value === filters.skill) || skillOptions[0]}
-          onChange={(opt) => handleFilterChange('skill', opt?.value || '')}
+          onChange={(opt) => handleFilterChange('skill', opt?.value?.toString() || '')}
           options={skillOptions}
         />
 
         <Select
           label="Location"
           value={locationOptions.find(opt => opt.value === filters.location) || locationOptions[0]}
-          onChange={(opt) => handleFilterChange('location', opt?.value || '')}
+          onChange={(opt) => handleFilterChange('location', opt?.value?.toString() || '')}
           options={locationOptions}
         />
 
         <Select
           label="Status"
           value={statusOptions.find(opt => opt.value === filters.status) || statusOptions[0]}
-          onChange={(opt) => handleFilterChange('status', opt?.value || '')}
+          onChange={(opt) => handleFilterChange('status', opt?.value?.toString() || '')}
           options={statusOptions}
         />
 

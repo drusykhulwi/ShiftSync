@@ -91,7 +91,7 @@ export const ShiftForm: React.FC<ShiftFormProps> = ({
           <Select
             label="Location"
             value={locationOptions.find(opt => opt.value === formData.locationId) || null}
-            onChange={(opt) => setFormData({ ...formData, locationId: opt?.value || '' })}
+            onChange={(opt) => setFormData({ ...formData, locationId: String(opt?.value || '') })}
             options={locationOptions}
             error={errors.locationId}
             placeholder="Select location"

@@ -68,7 +68,7 @@ export const AddCertification: React.FC<AddCertificationProps> = ({
       <Select
         label="Skill"
         value={skillOptions.find(opt => opt.value === selectedSkill) || null}
-        onChange={(opt) => setSelectedSkill(opt?.value || '')}
+        onChange={(opt) => setSelectedSkill(opt?.value?.toString() || '')}
         options={skillOptions}
         placeholder="Select a skill"
         required
@@ -77,7 +77,7 @@ export const AddCertification: React.FC<AddCertificationProps> = ({
       <Select
         label="Location"
         value={locationOptions.find(opt => opt.value === selectedLocation) || null}
-        onChange={(opt) => setSelectedLocation(opt?.value || '')}
+        onChange={(opt) => setSelectedSkill(opt?.value?.toString() || '')}
         options={locationOptions}
         placeholder="Select a location"
         required

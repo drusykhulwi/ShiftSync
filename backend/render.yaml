@@ -1,0 +1,30 @@
+# backend/render.yaml
+services:
+  - type: web
+    name: shiftsync-backend
+    runtime: node
+    repo: https://github.com/drusykhulwi/ShiftSync.git
+    plan: free
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm run start:prod
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: shiftsync-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION
+        value: 1d
+      - key: REFRESH_TOKEN_SECRET
+        generateValue: true
+      - key: REFRESH_TOKEN_EXPIRATION
+        value: 7d
+      - key: NODE_ENV
+        value: production
+
+databases:
+  - name: shiftsync-db
+    plan: free
+    databaseName: shiftsync
+    user: shiftsync

@@ -1,12 +1,12 @@
-# backend/render.yaml
 services:
   - type: web
     name: shiftsync-backend
     runtime: node
     repo: https://github.com/drusykhulwi/ShiftSync.git
     plan: free
+    rootDir: backend  # This tells Render to use backend as root
     buildCommand: npm install --include=dev && npx prisma generate && npm run build
-    startCommand: npm run start:prod
+    startCommand: node dist/main
     envVars:
       - key: DATABASE_URL
         fromDatabase:

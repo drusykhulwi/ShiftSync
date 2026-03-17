@@ -1,4 +1,21 @@
-// frontend/src/types/auth.types.ts
+export interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'ADMIN' | 'MANAGER' | 'STAFF';
+  phone?: string;
+  isActive: boolean;
+  desiredHours?: number;
+  notificationPrefs?: {
+    inApp: boolean;
+    email: boolean;
+    push: boolean;
+  };
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -9,15 +26,6 @@ export interface RegisterData {
   password: string;
   firstName: string;
   lastName: string;
-  phone?: string;
-}
-
-export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: 'ADMIN' | 'MANAGER' | 'STAFF';
   phone?: string;
 }
 

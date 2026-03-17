@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { authService } from '../services/api/auth.service';
-import { LoginCredentials, RegisterData, User, AuthState } from '../types/auth.types';
+import { LoginCredentials, RegisterData, AuthState } from '../types/auth.types';
 
 export const useAuth = () => {
   const router = useRouter();
@@ -26,58 +26,54 @@ export const useAuth = () => {
         });
         authService.setAuthToken(token);
       } else {
-        // Clear any corrupted data
         if (token && !user) {
           localStorage.removeItem('token');
         }
         setState(prev => ({ ...prev, isLoading: false }));
       }
     } catch (error) {
-      console.error('Error in auth initialization:', error);
+      console.error('Auth initialization error:', error);
       setState(prev => ({ ...prev, isLoading: false }));
     }
   }, []);
 
   const login = async (credentials: LoginCredentials) => {
-  setState(prev => ({ ...prev, isLoading: true, error: null }));
-  try {
-    const response = await authService.login(credentials);
-    console.log('Login response:', response); // Add this to debug
-    
-    const { accessToken, refreshToken, user } = response.data;
-    
-    authService.setAuthToken(accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    localStorage.setItem('user', JSON.stringify(user));
-    
-    setState({
-      user,
-      token: accessToken,
-      isLoading: false,
-      error: null,
-    });
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    try {
+      const response = await authService.login(credentials);
+      const { accessToken, refreshToken, user } = response.data;
+      
+      authService.setAuthToken(accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      setState({
+        user,
+        token: accessToken,
+        isLoading: false,
+        error: null,
+      });
 
-    // Redirect based on role
-    if (user.role === 'ADMIN') {
-      router.push('/admin/dashboard');
-    } else if (user.role === 'MANAGER') {
-      router.push('/manager/dashboard');
-    } else {
-      router.push('/staff/dashboard');
+      // Redirect based on role
+      if (user.role === 'ADMIN') {
+        router.push('/admin/dashboard');
+      } else if (user.role === 'MANAGER') {
+        router.push('/manager/dashboard');
+      } else {
+        router.push('/staff/dashboard');
+      }
+      
+      return { success: true };
+    } catch (error: any) {
+      const message = error.response?.data?.error?.message || 'Login failed';
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: message,
+      }));
+      return { success: false, error: message };
     }
-    
-    return { success: true };
-  } catch (error: any) {
-    console.error('Login error:', error); // Add this to debug
-    const message = error.response?.data?.error?.message || 'Login failed';
-    setState(prev => ({
-      ...prev,
-      isLoading: false,
-      error: message,
-    }));
-    return { success: false, error: message };
-  }
-};
+  };
 
   const register = async (data: RegisterData) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
@@ -96,7 +92,7 @@ export const useAuth = () => {
         error: null,
       });
 
-      router.push('/dashboard');
+      router.push('/staff/dashboard');
       return { success: true };
     } catch (error: any) {
       const message = error.response?.data?.error?.message || 'Registration failed';

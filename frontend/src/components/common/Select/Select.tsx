@@ -8,8 +8,8 @@ interface Option {
 }
 
 interface SelectProps {
-  value: Option | null;
-  onChange: (value: Option) => void;
+  value: Option | null | undefined; // Allow undefined
+  onChange: (value: Option | null) => void;
   options: Option[];
   label?: string;
   error?: string;
@@ -26,6 +26,7 @@ export const Select: React.FC<SelectProps> = ({
   placeholder = 'Select an option',
   disabled = false,
 }) => {
+  const selectedValue = value === undefined ? null : value;
   return (
     <div className="w-full">
       {label && (
@@ -33,7 +34,7 @@ export const Select: React.FC<SelectProps> = ({
           {label}
         </label>
       )}
-      <Listbox value={value} onChange={onChange} disabled={disabled}>
+      <Listbox value={selectedValue} onChange={onChange} disabled={disabled}>
         <div className="relative">
           <Listbox.Button className={`relative w-full cursor-default rounded-lg border ${error ? 'border-red-500' : 'border-gray-300'} bg-white py-2 pl-3 pr-10 text-left focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent sm:text-sm`}>
             <span className={`block truncate ${!value ? 'text-gray-400' : ''}`}>

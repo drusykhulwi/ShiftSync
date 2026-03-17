@@ -1,0 +1,46 @@
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { Layout } from '../../src/components/common/Layout';
+import { useAuth } from '../../src/hooks/useAuth';
+import { StatsCard } from '../../src/components/dashboard/StatsCard';
+import { OnDutyWidget } from '../../src/components/dashboard/OnDutyWidget';
+import { UpcomingShifts } from '../../src/components/dashboard/UpcomingShifts';
+
+export default function AdminDashboard() {
+  const { isAuthenticated, user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && (!isAuthenticated || user?.role !== 'ADMIN')) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, user, isLoading, router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="p-6">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6">Admin Dashboard</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatsCard title="Total Staff" value="24" change="+2" />
+          <StatsCard title="Open Shifts" value="12" change="-3" />
+          <StatsCard title="Pending Swaps" value="5" change="+1" />
+          <StatsCard title="Overtime Alerts" value="3" change="+1" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <OnDutyWidget />
+          <UpcomingShifts />
+        </div>
+      </div>
+    </Layout>
+  );
+}

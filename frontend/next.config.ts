@@ -1,16 +1,15 @@
-// frontend/next.config.ts
-import type { NextConfig } from 'next';
-
-const nextConfig: NextConfig = {
-  reactStrictMode: true,
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-    ],
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // If you're using the pages directory
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
+  
+  // If your pages are in src/pages, specify that
+  distDir: '.next',
+  
+  // Explicitly disable app directory
+  experimental: {
+    appDir: false,
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

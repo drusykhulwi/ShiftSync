@@ -5,16 +5,21 @@ export interface StaffMember {
   lastName: string;
   email: string;
   phone?: string;
-  role: string;
-  certifications: {
+  role: 'STAFF' | 'MANAGER' | 'ADMIN';
+  isActive: boolean;
+  desiredHours?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  certifications?: {
     id: string;
     skillId: string;
     skillName: string;
     locationId: string;
+    locationName?: string;
     certifiedAt: string;
     expiresAt?: string;
   }[];
-  availabilities: {
+  availabilities?: {
     id: string;
     dayOfWeek: number;
     startTime: string;

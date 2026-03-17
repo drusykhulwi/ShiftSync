@@ -1,6 +1,6 @@
-import React from 'react';
+// frontend/src/components/common/Select/Select.tsx
+import React, { Fragment } from 'react';
 import { Listbox, Transition } from '@headlessui/react';
-import { Fragment } from 'react';
 
 interface Option {
   value: string;
@@ -8,13 +8,14 @@ interface Option {
 }
 
 interface SelectProps {
-  value: Option | null | undefined; // Allow undefined
+  value: Option | null | undefined;
   onChange: (value: Option | null) => void;
   options: Option[];
   label?: string;
   error?: string;
   placeholder?: string;
   disabled?: boolean;
+  required?: boolean;
 }
 
 export const Select: React.FC<SelectProps> = ({
@@ -25,13 +26,16 @@ export const Select: React.FC<SelectProps> = ({
   error,
   placeholder = 'Select an option',
   disabled = false,
+  required = false,
 }) => {
   const selectedValue = value === undefined ? null : value;
+
   return (
     <div className="w-full">
       {label && (
         <label className="block text-sm font-medium text-gray-700 mb-1">
           {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       <Listbox value={selectedValue} onChange={onChange} disabled={disabled}>

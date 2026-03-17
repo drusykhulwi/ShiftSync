@@ -137,13 +137,13 @@ export default function SchedulePage() {
               })) || [],
               assignedStaff: shift.requirements?.flatMap(r => 
                 r.assignments?.map(a => {
-                    if (!a.user) return null;
-                    return {
+                  if (!a.user) return null;
+                  return {
                     id: a.user.id,
                     name: `${a.user.firstName || ''} ${a.user.lastName || ''}`.trim(),
                     role: 'STAFF',
-                    };
-                }).filter(Boolean) || []
+                  };
+                }).filter((item): item is { id: string; name: string; role: string } => item !== null) || []
               ) || [],
             }))}
             view={view}

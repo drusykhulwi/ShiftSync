@@ -1,6 +1,8 @@
+// frontend/src/components/common/Layout.tsx
 import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { ToastContainer } from '../notifications/NotificationToast/ToastContainer';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,6 +18,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         <main className="p-4">{children}</main>
       </div>
+      <ToastContainer />
     </div>
   );
 };

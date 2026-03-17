@@ -1,3 +1,4 @@
+// frontend/src/types/notification.types.ts
 export interface Notification {
   id: string;
   userId: string;
@@ -17,4 +18,10 @@ export interface NotificationPreferences {
   push: boolean;
   digest?: boolean;
   types?: Record<string, boolean>;
+}
+
+export interface WebSocketMessage {
+  event: string;
+  data: any;
+  timestamp: string;
 }

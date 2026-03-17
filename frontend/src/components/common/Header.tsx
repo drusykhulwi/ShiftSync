@@ -1,6 +1,7 @@
+// frontend/src/components/common/Header.tsx
 import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { NotificationBadge } from '../notifications/NotificationBadge';
+import { NotificationBadge } from '../notifications/NotificationBadge/NotificationBadge';
 
 interface HeaderProps {
   onMenuClick: () => void;

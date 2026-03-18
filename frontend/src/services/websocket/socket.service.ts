@@ -14,14 +14,15 @@ class SocketService {
 
     console.log('Connecting to WebSocket...');
     
-    this.socket = io(API_CONFIG.WS_URL, {
-      path: '/notifications',
+    this.socket = io(`${API_CONFIG.WS_URL}/notifications`, { 
       auth: { token },
       transports: ['websocket'],
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      // no path option needed
     });
+
 
     this.setupListeners();
   }

@@ -12,6 +12,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
   const router = useRouter();
   const { user, logout } = useAuth();
 
+  const commonItems = [
+    { href: '/profile', icon: '👤', label: 'Profile' },
+    { href: '/notifications', icon: '🔔', label: 'Notifications' },
+  ];
+
   const menuItems = {
     ADMIN: [
       { href: '/admin/dashboard', icon: '📊', label: 'Dashboard' },
@@ -19,6 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       { href: '/admin/locations', icon: '📍', label: 'Locations' },
       { href: '/admin/schedule', icon: '📅', label: 'Schedule' },
       { href: '/admin/reports', icon: '📈', label: 'Reports' },
+      ...commonItems
     ],
     MANAGER: [
       { href: '/manager/dashboard', icon: '📊', label: 'Dashboard' },
@@ -26,12 +32,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       { href: '/manager/staff', icon: '👥', label: 'Staff' },
       { href: '/manager/shifts', icon: '⏰', label: 'Shifts' },
       { href: '/manager/requests', icon: '🔄', label: 'Requests' },
+      ...commonItems
     ],
     STAFF: [
       { href: '/staff/dashboard', icon: '📊', label: 'Dashboard' },
       { href: '/staff/schedule', icon: '📅', label: 'My Schedule' },
       { href: '/staff/availability', icon: '⏰', label: 'Availability' },
       { href: '/staff/swaps', icon: '🔄', label: 'Swap Requests' },
+      ...commonItems
     ],
   };
 

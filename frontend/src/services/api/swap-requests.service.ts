@@ -47,4 +47,10 @@ export const swapRequestsService = {
   async cancelSwapRequest(id: string): Promise<void> {
     await apiClient.delete(`/swap-requests/${id}`);
   },
+
+  // Picks up an available dropped shift by its swap request ID
+  async pickupShift(swapRequestId: string): Promise<{ data: SwapRequest }> {
+    const response = await apiClient.post(`/swap-requests/${swapRequestId}/pickup`);
+    return response.data;
+  },
 };

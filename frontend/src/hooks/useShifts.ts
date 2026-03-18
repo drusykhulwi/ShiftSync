@@ -12,7 +12,9 @@ export const useShifts = (locationId?: string) => {
     setError(null);
     try {
       const response = await shiftsService.getShifts({ locationId, ...params });
-      setShifts(response.data);
+      // Backend returns { data: [...], meta: {} }, wrapped in axios response.data
+      // So response = { data: [...], meta: {} }
+      setShifts(response.data.data || response.data || []);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to fetch shifts');
     } finally {
@@ -25,8 +27,10 @@ export const useShifts = (locationId?: string) => {
     setError(null);
     try {
       const response = await shiftsService.createShift(data);
-      setShifts(prev => [...prev, response.data]);
-      return response.data;
+      // Backend returns the shift wrapped: { data: shift }
+      const shift = response.data.data || response.data;
+      setShifts(prev => [...prev, shift]);
+      return shift;
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to create shift');
       throw err;
@@ -40,8 +44,9 @@ export const useShifts = (locationId?: string) => {
     setError(null);
     try {
       const response = await shiftsService.updateShift(id, data);
-      setShifts(prev => prev.map(s => s.id === id ? response.data : s));
-      return response.data;
+      const shift = response.data.data || response.data;
+      setShifts(prev => prev.map(s => s.id === id ? shift : s));
+      return shift;
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to update shift');
       throw err;
@@ -64,10 +69,9 @@ export const useShifts = (locationId?: string) => {
     }
   };
 
+  // Fetch on mount always — backend handles empty locationId filter
   useEffect(() => {
-    if (locationId) {
-      fetchShifts();
-    }
+    fetchShifts();
   }, [locationId]);
 
   return {

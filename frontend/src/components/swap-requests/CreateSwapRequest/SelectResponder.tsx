@@ -27,7 +27,8 @@ export const SelectResponder: React.FC<SelectResponderProps> = ({
     setIsLoading(true);
     try {
       const response = await usersService.getStaffByLocation(locationId);
-      setStaff(response.data || []);
+      // Unwrap double-wrapped response
+      setStaff(response.data?.data || response.data || []);
     } catch (error) {
       console.error('Failed to fetch staff:', error);
     } finally {
@@ -35,7 +36,7 @@ export const SelectResponder: React.FC<SelectResponderProps> = ({
     }
   };
 
-  const filteredStaff = staff.filter(s => 
+  const filteredStaff = staff.filter(s =>
     `${s.firstName} ${s.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -52,16 +53,15 @@ export const SelectResponder: React.FC<SelectResponderProps> = ({
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
-      
       {isLoading ? (
-        <div className="text-center py-4">Loading staff...</div>
+        <div className="text-center py-4 text-sm text-gray-500">Loading staff...</div>
       ) : (
         <Select
-        label="Select Staff Member"
-        value={staffOptions.find(opt => opt.value === selectedUserId) || null}
-        onChange={(opt) => onSelect(opt?.value as string || '')}
-        options={staffOptions}
-        placeholder="Choose who to swap with"
+          label="Select Staff Member"
+          value={staffOptions.find(opt => opt.value === selectedUserId) || null}
+          onChange={(opt) => onSelect(opt?.value as string || '')}
+          options={staffOptions}
+          placeholder="Choose who to swap with"
         />
       )}
     </div>

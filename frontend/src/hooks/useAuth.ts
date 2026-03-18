@@ -41,7 +41,7 @@ export const useAuth = () => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     try {
       const response = await authService.login(credentials);
-      const { accessToken, refreshToken, user } = response.data;
+      const { accessToken, refreshToken, user } = response.data.data; // ← correct
       
       authService.setAuthToken(accessToken);
       localStorage.setItem('refreshToken', refreshToken);
@@ -65,6 +65,9 @@ export const useAuth = () => {
       
       return { success: true };
     } catch (error: any) {
+      console.log('Full error:', error);         
+      console.log('Response:', error.response);  
+      console.log('Status:', error.response?.status);   
       const message = error.response?.data?.error?.message || 'Login failed';
       setState(prev => ({
         ...prev,
@@ -76,34 +79,18 @@ export const useAuth = () => {
   };
 
   const register = async (data: RegisterData) => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-    try {
-      const response = await authService.register(data);
-      const { accessToken, refreshToken, user } = response.data;
-      
-      authService.setAuthToken(accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      setState({
-        user,
-        token: accessToken,
-        isLoading: false,
-        error: null,
-      });
-
-      router.push('/staff/dashboard');
-      return { success: true };
-    } catch (error: any) {
-      const message = error.response?.data?.error?.message || 'Registration failed';
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: message,
-      }));
-      return { success: false, error: message };
-    }
-  };
+  setState(prev => ({ ...prev, isLoading: true, error: null }));
+  try {
+    await authService.register(data);  // ← don't unpack, just await
+    setState(prev => ({ ...prev, isLoading: false }));
+    router.push('/login');  // ← redirect to login instead of auto-login
+    return { success: true };
+  } catch (error: any) {
+    const message = error.response?.data?.error?.message || 'Registration failed';
+    setState(prev => ({ ...prev, isLoading: false, error: message }));
+    return { success: false, error: message };
+  }
+};
 
   const logout = async () => {
     await authService.logout();

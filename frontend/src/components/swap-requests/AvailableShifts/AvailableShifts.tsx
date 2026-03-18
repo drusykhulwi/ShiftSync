@@ -1,115 +1,149 @@
-// frontend/src/components/swap-requests/AvailableShifts/AvailableShifts.tsx
+// frontend/src/components/swap-requests/CreateSwapRequest/CreateSwapRequest.tsx
 import React, { useState, useEffect } from 'react';
-import { ShiftPickup } from './ShiftPickup';
+import { Modal } from '../../common/Modal';
+import { Tabs } from '../../common/Tabs';
 import { Select } from '../../common/Select';
-import { Input } from '../../common/Input';
+import { Button } from '../../common/Button';
+import { SelectResponder } from './SelectResponder';
+import { DropShift } from './DropShift';
+import { shiftsService } from '../../../services/api/shifts.service';
 import { swapRequestsService } from '../../../services/api/swap-requests.service';
-import { locationsService } from '../../../services/api/locations.service';
-import { skillsService } from '../../../services/api/skills.service';
 
-interface AvailableShiftsProps {
-  onPickup: (shiftId: string) => Promise<void>;
+interface CreateSwapRequestProps {
+  isOpen: boolean;
+  onClose: () => void;
+  userId: string;
+  onSuccess?: () => void;
 }
 
-export const AvailableShifts: React.FC<AvailableShiftsProps> = ({ onPickup }) => {
-  const [shifts, setShifts] = useState<any[]>([]);
-  const [locations, setLocations] = useState<any[]>([]);
-  const [skills, setSkills] = useState<any[]>([]);
-  const [filters, setFilters] = useState({
-    locationId: '',
-    skillId: '',
-  });
+export const CreateSwapRequest: React.FC<CreateSwapRequestProps> = ({
+  isOpen,
+  onClose,
+  userId,
+  onSuccess,
+}) => {
+  const [myShifts, setMyShifts] = useState<any[]>([]);
+  const [selectedShift, setSelectedShift] = useState<string>('');
+  const [selectedResponder, setSelectedResponder] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'SWAP' | 'DROP'>('SWAP');
 
   useEffect(() => {
-    fetchFilters();
-    fetchAvailableShifts();
-  }, []);
+    if (isOpen) fetchMyShifts();
+  }, [isOpen]);
 
-  useEffect(() => {
-    fetchAvailableShifts();
-  }, [filters]);
-
-  const fetchFilters = async () => {
+  const fetchMyShifts = async () => {
     try {
-      const [locationsRes, skillsRes] = await Promise.all([
-        locationsService.getLocations(),
-        skillsService.getSkills(),
-      ]);
-      setLocations(locationsRes.data || []);
-      setSkills(skillsRes.data || []);
+      const response = await shiftsService.getShifts({
+        startDate: new Date().toISOString(),
+      });
+      const allShifts = response.data?.data || response.data || [];
+      const userShifts = allShifts.filter((shift: any) =>
+        shift.requirements?.some((r: any) =>
+          r.assignments?.some((a: any) => a.userId === userId)
+        )
+      );
+      setMyShifts(userShifts);
     } catch (error) {
-      console.error('Failed to fetch filters:', error);
+      console.error('Failed to fetch shifts:', error);
     }
   };
 
-  const fetchAvailableShifts = async () => {
+  const shiftOptions = myShifts.map(shift => ({
+    value: shift.id,
+    label: `${shift.title} - ${new Date(shift.startTime).toLocaleDateString()}`,
+  }));
+
+  const selectedShiftData = myShifts.find(s => s.id === selectedShift);
+
+  const handleCreateSwap = async () => {
+    if (!selectedShift || !selectedResponder) return;
     setIsLoading(true);
     try {
-      const response = await swapRequestsService.getAvailableDrops(filters);
-      setShifts(response.data || []);
+      await swapRequestsService.createSwapRequest({
+        shiftId: selectedShift,
+        type: 'SWAP',
+        responderId: selectedResponder,
+      });
+      onSuccess?.();
+      onClose();
     } catch (error) {
-      console.error('Failed to fetch available shifts:', error);
+      console.error('Failed to create swap request:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const locationOptions = [
-    { value: '', label: 'All Locations' },
-    ...locations.map(l => ({ value: l.id, label: l.name })),
-  ];
+  const handleCreateDrop = async (shiftId: string) => {
+    setIsLoading(true);
+    try {
+      await swapRequestsService.createSwapRequest({ shiftId, type: 'DROP' });
+      onSuccess?.();
+      onClose();
+    } catch (error) {
+      console.error('Failed to create drop request:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const skillOptions = [
-    { value: '', label: 'All Skills' },
-    ...skills.map(s => ({ value: s.id, label: s.name })),
+  const tabs = [
+    {
+      id: 'SWAP',
+      label: 'Request Swap',
+      content: (
+        <div className="space-y-4">
+          <Select
+            label="Select Shift"
+            value={shiftOptions.find(opt => opt.value === selectedShift) || null}
+            onChange={(opt) => setSelectedShift(opt?.value as string || '')}
+            options={shiftOptions}
+            placeholder="Choose a shift to swap"
+          />
+          {selectedShiftData && (
+            <SelectResponder
+              locationId={selectedShiftData.locationId}
+              selectedUserId={selectedResponder}
+              onSelect={setSelectedResponder}
+            />
+          )}
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4">
+            <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Cancel</Button>
+            <Button
+              onClick={handleCreateSwap}
+              disabled={!selectedShift || !selectedResponder}
+              isLoading={isLoading}
+              className="w-full sm:w-auto"
+            >
+              Send Swap Request
+            </Button>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'DROP',
+      label: 'Drop Shift',
+      content: (
+        <div className="space-y-4">
+          <Select
+            label="Select Shift"
+            value={shiftOptions.find(opt => opt.value === selectedShift) || null}
+            onChange={(opt) => setSelectedShift(opt?.value as string || '')}
+            options={shiftOptions}
+            placeholder="Choose a shift to drop"
+          />
+          {selectedShiftData && (
+            <DropShift shift={selectedShiftData} onSubmit={handleCreateDrop} onCancel={onClose} />
+          )}
+        </div>
+      ),
+    },
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <Select
-        label="Location"
-        value={locationOptions.find(opt => opt.value === filters.locationId) || locationOptions[0]}
-        onChange={(opt) => {
-            const value = opt?.value;
-            setFilters(prev => ({ ...prev, locationId: value !== undefined ? String(value) : '' }));
-        }}
-        options={locationOptions}
-        />
-
-        <Select
-        label="Skill"
-        value={skillOptions.find(opt => opt.value === filters.skillId) || skillOptions[0]}
-        onChange={(opt) => {
-            const value = opt?.value;
-            setFilters(prev => ({ ...prev, skillId: value !== undefined ? String(value) : '' }));
-        }}
-        options={skillOptions}
-        />
-      </div>
-
-      {isLoading ? (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-        </div>
-      ) : shifts.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          <p className="text-4xl mb-2">📭</p>
-          <p>No shifts available for pickup</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {shifts.map((item) => (
-            <ShiftPickup
-                key={item.shift.id}
-                shift={item.shift}
-                expiresAt={item.expiresAt} // Pass the expiry date from the swap request
-                onPickup={onPickup}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+    <Modal isOpen={isOpen} onClose={onClose} title="Request Shift Change" size="lg">
+      <Tabs tabs={tabs} defaultTab={activeTab} onChange={(tab) => setActiveTab(tab as 'SWAP' | 'DROP')} />
+    </Modal>
   );
 };

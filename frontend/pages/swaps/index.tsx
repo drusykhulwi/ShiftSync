@@ -10,7 +10,6 @@ import { AvailableShifts } from '../../src/components/swap-requests/AvailableShi
 import { Button } from '../../src/components/common/Button';
 import { useAuth } from '../../src/hooks/useAuth';
 import { swapRequestsService } from '../../src/services/api/swap-requests.service';
-import { shiftsService } from '../../src/services/api/shifts.service';
 import { SwapRequest } from '../../src/types/swap-request.types';
 
 export default function SwapsPage() {
@@ -28,7 +27,6 @@ export default function SwapsPage() {
       router.push('/login');
       return;
     }
-
     if (isAuthenticated) {
       fetchRequests();
     }
@@ -38,7 +36,7 @@ export default function SwapsPage() {
     setIsLoading(true);
     try {
       const response = await swapRequestsService.getSwapRequests();
-      setRequests(response.data || []);
+      setRequests(response.data?.data || response.data || []);
     } catch (error) {
       console.error('Failed to fetch swap requests:', error);
     } finally {
@@ -57,23 +55,23 @@ export default function SwapsPage() {
 
   const handleApprove = async (requestId: string, reason?: string) => {
     try {
-        await swapRequestsService.approveSwap(requestId, { action: 'APPROVE', reason });
-        await fetchRequests();
-        setIsApprovalOpen(false);
-        setSelectedRequest(null);
+      await swapRequestsService.approveSwap(requestId, { action: 'APPROVE', reason });
+      await fetchRequests();
+      setIsApprovalOpen(false);
+      setSelectedRequest(null);
     } catch (error) {
-        console.error('Failed to approve request:', error);
+      console.error('Failed to approve request:', error);
     }
   };
 
   const handleReject = async (requestId: string, reason?: string) => {
     try {
-        await swapRequestsService.approveSwap(requestId, { action: 'REJECT', reason });
-        await fetchRequests();
-        setIsApprovalOpen(false);
-        setSelectedRequest(null);
+      await swapRequestsService.approveSwap(requestId, { action: 'REJECT', reason });
+      await fetchRequests();
+      setIsApprovalOpen(false);
+      setSelectedRequest(null);
     } catch (error) {
-        console.error('Failed to reject request:', error);
+      console.error('Failed to reject request:', error);
     }
   };
 
@@ -88,71 +86,86 @@ export default function SwapsPage() {
 
   const handlePickup = async (shiftId: string) => {
     try {
-      // This would create a response to a drop request
-      // For now, just refresh
+      await swapRequestsService.pickupShift(shiftId);
       await fetchRequests();
     } catch (error) {
       console.error('Failed to pick up shift:', error);
     }
   };
 
-  const filterRequestsByRole = () => {
-    if (!user) return [];
-
-    switch (activeTab) {
+  const filterRequests = (tab: string) => {
+    if (!user || !Array.isArray(requests)) return [];
+    switch (tab) {
       case 'my-requests':
         return requests.filter(r => r.requesterId === user.id);
       case 'pending-response':
         return requests.filter(r => r.responderId === user.id && r.status === 'PENDING');
       case 'pending-approval':
         return requests.filter(r => r.status === 'ACCEPTED');
-      case 'available-drops':
-        return []; // Handled by AvailableShifts component
       default:
         return requests;
     }
   };
 
+  const renderRequestList = (tab: string) => {
+    const filtered = filterRequests(tab);
+    if (isLoading) {
+      return (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
+        </div>
+      );
+    }
+    if (filtered.length === 0) {
+      return (
+        <div className="text-center py-8 text-gray-500">
+          <p className="text-4xl mb-2">📭</p>
+          <p>No requests found</p>
+        </div>
+      );
+    }
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filtered.map((request) => (
+          <SwapRequestCard
+            key={request.id}
+            request={request}
+            userRole={user?.role || ''}
+            userId={user?.id || ''}
+            onRespond={handleRespond}
+            onApprove={(id) => {
+              const req = requests.find(r => r.id === id);
+              if (req) {
+                setSelectedRequest(req);
+                setIsApprovalOpen(true);
+              }
+            }}
+            onCancel={handleCancel}
+            onViewShift={(shiftId) => router.push(`/schedule/${shiftId}`)}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  const isManager = user?.role === 'MANAGER' || user?.role === 'ADMIN';
+
   const tabs = [
     {
       id: 'my-requests',
       label: 'My Requests',
-      content: (
-        <div className="space-y-4">
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-            </div>
-          ) : filterRequestsByRole().length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p className="text-4xl mb-2">📭</p>
-              <p>No requests found</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filterRequestsByRole().map((request) => (
-                <SwapRequestCard
-                  key={request.id}
-                  request={request}
-                  userRole={user?.role || ''}
-                  userId={user?.id || ''}
-                  onRespond={handleRespond}
-                  onApprove={(id, action) => {
-                    const req = requests.find(r => r.id === id);
-                    if (req) {
-                      setSelectedRequest(req);
-                      setIsApprovalOpen(true);
-                    }
-                  }}
-                  onCancel={handleCancel}
-                  onViewShift={(shiftId) => router.push(`/schedule/${shiftId}`)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      ),
+      content: renderRequestList('my-requests'),
     },
+    {
+      id: 'pending-response',
+      label: 'Respond to Requests',
+      content: renderRequestList('pending-response'),
+    },
+    ...(isManager ? [{
+      id: 'pending-approval',
+      label: 'Pending Approval',
+      content: renderRequestList('pending-approval'),
+    }] : []),
     {
       id: 'available-drops',
       label: 'Available Shifts',
@@ -164,7 +177,7 @@ export default function SwapsPage() {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500" />
         </div>
       </Layout>
     );
@@ -172,10 +185,10 @@ export default function SwapsPage() {
 
   return (
     <Layout>
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Swap Requests</h1>
-          <Button onClick={() => setIsCreateOpen(true)}>
+      <div className="p-4 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Swap Requests</h1>
+          <Button onClick={() => setIsCreateOpen(true)} className="w-full sm:w-auto">
             + New Request
           </Button>
         </div>
@@ -190,16 +203,16 @@ export default function SwapsPage() {
         />
 
         {selectedRequest && (
-            <SwapApproval
-                isOpen={isApprovalOpen}
-                onClose={() => {
-                setIsApprovalOpen(false);
-                setSelectedRequest(null);
-                }}
-                request={selectedRequest}
-                onApprove={handleApprove}
-                onReject={handleReject}
-            />
+          <SwapApproval
+            isOpen={isApprovalOpen}
+            onClose={() => {
+              setIsApprovalOpen(false);
+              setSelectedRequest(null);
+            }}
+            request={selectedRequest}
+            onApprove={handleApprove}
+            onReject={handleReject}
+          />
         )}
       </div>
     </Layout>

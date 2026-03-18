@@ -36,13 +36,13 @@ export const CreateSwapRequest: React.FC<CreateSwapRequestProps> = ({
 
   const fetchMyShifts = async () => {
     try {
-      // Get user's upcoming shifts
       const response = await shiftsService.getShifts({
         startDate: new Date().toISOString(),
       });
-      // Filter shifts assigned to this user
-      const userShifts = (response.data || []).filter((shift: any) => 
-        shift.requirements?.some((r: any) => 
+      // Fix double-wrapping
+      const allShifts = response.data.data || response.data || [];
+      const userShifts = allShifts.filter((shift: any) =>
+        shift.requirements?.some((r: any) =>
           r.assignments?.some((a: any) => a.userId === userId)
         )
       );
@@ -61,7 +61,6 @@ export const CreateSwapRequest: React.FC<CreateSwapRequestProps> = ({
 
   const handleCreateSwap = async () => {
     if (!selectedShift || !selectedResponder) return;
-    
     setIsLoading(true);
     try {
       await swapRequestsService.createSwapRequest({
@@ -106,8 +105,7 @@ export const CreateSwapRequest: React.FC<CreateSwapRequestProps> = ({
             onChange={(opt) => setSelectedShift(opt?.value as string || '')}
             options={shiftOptions}
             placeholder="Choose a shift to swap"
-            />
-
+          />
           {selectedShiftData && (
             <SelectResponder
               locationId={selectedShiftData.locationId}
@@ -115,15 +113,15 @@ export const CreateSwapRequest: React.FC<CreateSwapRequestProps> = ({
               onSelect={setSelectedResponder}
             />
           )}
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button variant="outline" onClick={onClose}>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4">
+            <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
               Cancel
             </Button>
             <Button
               onClick={handleCreateSwap}
               disabled={!selectedShift || !selectedResponder}
               isLoading={isLoading}
+              className="w-full sm:w-auto"
             >
               Send Swap Request
             </Button>
@@ -142,8 +140,7 @@ export const CreateSwapRequest: React.FC<CreateSwapRequestProps> = ({
             onChange={(opt) => setSelectedShift(opt?.value as string || '')}
             options={shiftOptions}
             placeholder="Choose a shift to drop"
-           />
-
+          />
           {selectedShiftData && (
             <DropShift
               shift={selectedShiftData}

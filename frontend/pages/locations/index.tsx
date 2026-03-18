@@ -25,35 +25,34 @@ export default function LocationsPage() {
       router.push('/login');
       return;
     }
-
-    if (isAuthenticated) {
-      fetchLocations();
-    }
+    if (isAuthenticated) fetchLocations();
   }, [isAuthenticated, authLoading, router]);
 
   const fetchLocations = async () => {
     setIsLoading(true);
     try {
       const response = await locationsService.getLocations({ includeInactive: true });
-      setLocations(response.data || []);
-      
-      // Fetch stats for each location
-      const statsPromises = (response.data || []).map(async (loc: Location) => {
-        try {
-          const stats = await locationsService.getLocationStats(loc.id);
-          return { id: loc.id, stats };
-        } catch (error) {
-          console.error(`Failed to fetch stats for ${loc.id}:`, error);
-          return null;
-        }
-      });
+      // Unwrap double-wrapped response
+      const locationList: Location[] = response.data?.data || response.data || [];
+      setLocations(locationList);
 
-      const statsResults = await Promise.all(statsPromises);
+      // Fetch stats for each location
+      const statsResults = await Promise.all(
+        locationList.map(async (loc: Location) => {
+          try {
+            const stats = await locationsService.getLocationStats(loc.id);
+            return { id: loc.id, stats: (stats as any).data?.data || (stats as any).data || stats };
+          } catch {
+            return null;
+          }
+        })
+      );
+
       const statsMap = statsResults.reduce((acc, item) => {
         if (item) acc[item.id] = item.stats;
         return acc;
       }, {} as Record<string, any>);
-      
+
       setLocationStats(statsMap);
     } catch (error) {
       console.error('Failed to fetch locations:', error);
@@ -83,7 +82,7 @@ export default function LocationsPage() {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500" />
         </div>
       </Layout>
     );
@@ -91,9 +90,9 @@ export default function LocationsPage() {
 
   return (
     <Layout>
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Locations</h1>
+      <div className="p-4 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Locations</h1>
         </div>
 
         <LocationList
@@ -113,10 +112,7 @@ export default function LocationsPage() {
 
         <Modal
           isOpen={isDetailsOpen}
-          onClose={() => {
-            setIsDetailsOpen(false);
-            setSelectedLocation(null);
-          }}
+          onClose={() => { setIsDetailsOpen(false); setSelectedLocation(null); }}
           title="Location Details"
           size="lg"
         >
@@ -124,18 +120,10 @@ export default function LocationsPage() {
             <LocationDetails
               location={selectedLocation}
               stats={locationStats[selectedLocation.id]}
-              onEdit={() => {
-                setIsDetailsOpen(false);
-                setTimeout(() => {
-                  setIsFormOpen(true);
-                }, 100);
-              }}
+              onEdit={() => { setIsDetailsOpen(false); setTimeout(() => setIsFormOpen(true), 100); }}
               onViewStaff={() => router.push(`/staff?location=${selectedLocation.id}`)}
               onViewShifts={() => router.push(`/schedule?location=${selectedLocation.id}`)}
-              onAssignManager={() => {
-                // Implement manager assignment
-                console.log('Assign manager to:', selectedLocation.id);
-              }}
+              onAssignManager={() => console.log('Assign manager to:', selectedLocation.id)}
             />
           )}
         </Modal>

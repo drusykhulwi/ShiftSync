@@ -28,7 +28,7 @@ export const SelectResponder: React.FC<SelectResponderProps> = ({
     try {
       const response = await usersService.getStaffByLocation(locationId);
       // Unwrap double-wrapped response
-      setStaff(response.data?.data || response.data || []);
+      setStaff((response as any).data?.data || (response as any).data || []);
     } catch (error) {
       console.error('Failed to fetch staff:', error);
     } finally {

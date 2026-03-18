@@ -28,7 +28,7 @@ export const useShifts = (locationId?: string) => {
     try {
       const response = await shiftsService.createShift(data);
       // Backend returns the shift wrapped: { data: shift }
-      const shift = response.data.data || response.data;
+      const shift = (response as any).data?.data || (response as any).data;
       setShifts(prev => [...prev, shift]);
       return shift;
     } catch (err: any) {
@@ -44,7 +44,7 @@ export const useShifts = (locationId?: string) => {
     setError(null);
     try {
       const response = await shiftsService.updateShift(id, data);
-      const shift = response.data.data || response.data;
+      const shift = (response as any).data?.data || (response as any).data;
       setShifts(prev => prev.map(s => s.id === id ? shift : s));
       return shift;
     } catch (err: any) {

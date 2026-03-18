@@ -19,17 +19,15 @@ export default function StaffDetailPage() {
       router.push('/login');
       return;
     }
-
-    if (id && isAuthenticated) {
-      fetchStaff();
-    }
+    if (id && isAuthenticated) fetchStaff();
   }, [id, isAuthenticated, authLoading, router]);
 
   const fetchStaff = async () => {
     setIsLoading(true);
     try {
       const response = await staffService.getStaffById(id as string);
-      setStaff(response.data);
+      // Unwrap double-wrapped response
+      setStaff((response as any).data?.data || (response as any).data);
     } catch (error) {
       console.error('Failed to fetch staff:', error);
     } finally {
@@ -41,7 +39,7 @@ export default function StaffDetailPage() {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500" />
         </div>
       </Layout>
     );
@@ -59,10 +57,10 @@ export default function StaffDetailPage() {
 
   return (
     <Layout>
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <button
           onClick={() => router.back()}
-          className="mb-4 text-primary-500 hover:text-primary-600"
+          className="mb-4 text-primary-500 hover:text-primary-600 text-sm"
         >
           ← Back to Staff List
         </button>

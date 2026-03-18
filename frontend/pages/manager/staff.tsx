@@ -31,14 +31,16 @@ export default function ManagerStaffPage() {
   const fetchStaff = async () => {
     setIsLoading(true);
     try {
-      const response = await staffService.getStaffByLocation(user?.locations?.[0]);
-      setStaff(response.data || []);
+        const locationId = user?.locations?.[0];
+        if (!locationId) return;
+        const response = await staffService.getStaffByLocation(locationId);
+        setStaff((response as any).data?.data || (response as any).data || []);
     } catch (error) {
-      console.error('Failed to fetch staff:', error);
+        console.error('Failed to fetch staff:', error);
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
-  };
+   };
 
   if (authLoading) {
     return (

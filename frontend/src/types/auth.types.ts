@@ -7,6 +7,7 @@ export interface User {
   phone?: string;
   isActive: boolean;
   desiredHours?: number;
+  locations?: string[]; 
   notificationPrefs?: {
     inApp: boolean;
     email: boolean;

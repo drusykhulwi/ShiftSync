@@ -22,23 +22,21 @@ export default function LocationDetailPage() {
       router.push('/login');
       return;
     }
-
-    if (id && isAuthenticated) {
-      fetchLocation();
-    }
+    if (id && isAuthenticated) fetchLocation();
   }, [id, isAuthenticated, authLoading, router]);
 
   const fetchLocation = async () => {
     setIsLoading(true);
     try {
       const response = await locationsService.getLocationById(id as string);
-      setLocation(response.data);
-      
+      // Unwrap double-wrapped response
+      setLocation((response as any).data?.data || (response as any).data)
+
       try {
         const statsData = await locationsService.getLocationStats(id as string);
-        setStats(statsData);
-      } catch (error) {
-        console.error('Failed to fetch stats:', error);
+        setStats((statsData as any).data?.data || (statsData as any).data || statsData);
+      } catch {
+        console.error('Failed to fetch stats');
       }
     } catch (error) {
       console.error('Failed to fetch location:', error);
@@ -58,7 +56,7 @@ export default function LocationDetailPage() {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500" />
         </div>
       </Layout>
     );
@@ -76,10 +74,10 @@ export default function LocationDetailPage() {
 
   return (
     <Layout>
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <button
           onClick={() => router.back()}
-          className="mb-4 text-primary-500 hover:text-primary-600"
+          className="mb-4 text-primary-500 hover:text-primary-600 text-sm"
         >
           ← Back to Locations
         </button>

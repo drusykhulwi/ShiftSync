@@ -41,7 +41,7 @@ export const useAuth = () => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     try {
       const response = await authService.login(credentials);
-      const { accessToken, refreshToken, user } = response.data.data; // ← correct
+      const { accessToken, refreshToken, user } = (response as any).data.data;
       
       authService.setAuthToken(accessToken);
       localStorage.setItem('refreshToken', refreshToken);

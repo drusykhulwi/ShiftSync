@@ -35,7 +35,7 @@ export const AssignmentDialog: React.FC<AssignmentDialogProps> = ({
   const fetchAvailableStaff = async () => {
     try {
       const response = await usersService.getStaffByLocation(shift.locationId);
-      setAvailableStaff(response.data || []);
+      setAvailableStaff((response as any).data?.data || response.data || []);
     } catch (error) {
       console.error('Failed to fetch staff:', error);
     }
@@ -53,6 +53,7 @@ export const AssignmentDialog: React.FC<AssignmentDialogProps> = ({
 
   const handleAssign = async () => {
     if (!selectedRequirement || !selectedStaff) return;
+    console.log('Assigning:', JSON.stringify({ shiftId: shift.id, userId: selectedStaff, requirementId: selectedRequirement }));
     
     setIsLoading(true);
     try {

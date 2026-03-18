@@ -9,7 +9,6 @@ import { Button } from '../../src/components/common/Button';
 import { useAuth } from '../../src/hooks/useAuth';
 import { useShifts } from '../../src/hooks/useShifts';
 import { shiftsService } from '../../src/services/api/shifts.service';
-import { usersService } from '../../src/services/api/users.service';
 import { skillsService } from '../../src/services/api/skills.service';
 import { locationsService } from '../../src/services/api/locations.service';
 import { CalendarEvent } from '../../src/types/schedule.types';
@@ -18,8 +17,8 @@ import { Shift } from '../../src/types/shift.types';
 export default function SchedulePage() {
   const router = useRouter();
   const { isAuthenticated, user, isLoading: authLoading } = useAuth();
-  const [locations, setLocations] = useState([]);
-  const [skills, setSkills] = useState([]);
+  const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
+  const [skills, setSkills] = useState<{ id: string; name: string; category: string }[]>([]);
   const [staff, setStaff] = useState([]);
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [isShiftFormOpen, setIsShiftFormOpen] = useState(false);
@@ -27,7 +26,7 @@ export default function SchedulePage() {
   const [view, setView] = useState<'day' | 'week' | 'month'>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const { shifts, isLoading, fetchShifts, createShift, updateShift } = useShifts();
+  const { shifts, isLoading, fetchShifts, createShift } = useShifts();
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -41,8 +40,9 @@ export default function SchedulePage() {
           locationsService.getLocations(),
           skillsService.getSkills(),
         ]);
-        setLocations(locationsRes.data || []);
-        setSkills(skillsRes.data || []);
+        // Unwrap double-wrapped responses
+        setLocations(locationsRes.data?.data || locationsRes.data || []);
+        setSkills(skillsRes.data?.data || skillsRes.data || []);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       }
@@ -55,24 +55,27 @@ export default function SchedulePage() {
 
   useEffect(() => {
     if (isAuthenticated) {
+      const end = new Date(currentDate);
+      end.setDate(end.getDate() + 30);
       fetchShifts({
         startDate: currentDate.toISOString(),
-        endDate: new Date(currentDate.setDate(currentDate.getDate() + 30)).toISOString(),
+        endDate: end.toISOString(),
       });
     }
-  }, [isAuthenticated, currentDate, fetchShifts]);
+  }, [isAuthenticated]);
 
   const handleEventClick = async (event: CalendarEvent) => {
     try {
       const response = await shiftsService.getShiftById(event.id);
-      setSelectedShift(response.data);
+      // getShiftById returns response.data which is { success, data: shift }
+      setSelectedShift((response as any).data?.data || (response as any).data);
       setIsAssignmentOpen(true);
     } catch (error) {
       console.error('Failed to fetch shift details:', error);
     }
   };
 
-  const handleTimeSlotClick = async (date: Date, hour?: number) => {
+  const handleTimeSlotClick = async (date: Date) => {
     if (user?.role === 'MANAGER' || user?.role === 'ADMIN') {
       setCurrentDate(date);
       setIsShiftFormOpen(true);
@@ -86,10 +89,11 @@ export default function SchedulePage() {
   const handleAssignStaff = async (shiftId: string, userId: string, requirementId: string) => {
     try {
       await shiftsService.assignStaff(shiftId, { userId, requirementId });
-      // Refresh shifts
+      const end = new Date(currentDate);
+      end.setDate(end.getDate() + 30);
       fetchShifts({
         startDate: currentDate.toISOString(),
-        endDate: new Date(currentDate.setDate(currentDate.getDate() + 30)).toISOString(),
+        endDate: end.toISOString(),
       });
       setIsAssignmentOpen(false);
     } catch (error) {
@@ -101,19 +105,18 @@ export default function SchedulePage() {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500" />
         </div>
       </Layout>
     );
   }
 
   return (
-    <Layout>
-      <div className="p-6 h-full">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Schedule</h1>
+      <div className="p-4 sm:p-6 h-full">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Schedule</h1>
           {(user?.role === 'MANAGER' || user?.role === 'ADMIN') && (
-            <Button onClick={() => setIsShiftFormOpen(true)}>
+            <Button onClick={() => setIsShiftFormOpen(true)} className="w-full sm:w-auto">
               + Create Shift
             </Button>
           )}
@@ -135,7 +138,7 @@ export default function SchedulePage() {
                 headcount: r.headcount,
                 assigned: r.assignments?.length || 0,
               })) || [],
-              assignedStaff: shift.requirements?.flatMap(r => 
+              assignedStaff: shift.requirements?.flatMap(r =>
                 r.assignments?.map(a => {
                   if (!a.user) return null;
                   return {
@@ -172,6 +175,5 @@ export default function SchedulePage() {
           />
         )}
       </div>
-    </Layout>
   );
 }

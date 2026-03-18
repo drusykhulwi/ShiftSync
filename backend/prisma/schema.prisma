@@ -1,14 +1,286 @@
-// backend/prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
-  // Add preview features if you really need them
-  // previewFeatures = ["views", "fullTextIndex"]
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
-// Enums
+model User {
+  id                String            @id @default(cuid())
+  email             String            @unique
+  password          String
+  firstName         String
+  lastName          String
+  role              UserRole
+  phone             String?
+  avatar            String?
+  notificationPrefs Json              @default("{\"push\": false, \"email\": false, \"inApp\": true}")
+  desiredHours      Int?              @default(40)
+  isActive          Boolean           @default(true)
+  lastLoginAt       DateTime?
+  refreshToken      String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  auditLogs         AuditLog[]        @relation("Actor")
+  availabilities    Availability[]
+  certifications    Certification[]
+  notifications     Notification[]
+  overtimeWarnings  OvertimeWarning[]
+  createdShifts     Shift[]           @relation("Creator")
+  assignedShifts    ShiftAssignment[]
+  swapRequests      SwapRequest[]     @relation("Requester")
+  swapResponses     SwapRequest[]     @relation("Responder")
+  managedLocations  Location[]        @relation("ManagerLocations")
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+}
+
+model Location {
+  id             String          @id @default(cuid())
+  name           String          @unique
+  address        String
+  city           String
+  state          String
+  zipCode        String
+  country        String          @default("USA")
+  timezone       String
+  phone          String?
+  email          String?
+  isActive       Boolean         @default(true)
+  metadata       Json?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  certifications Certification[]
+  shifts         Shift[]
+  managers       User[]          @relation("ManagerLocations")
+
+  @@unique([name, city])
+  @@index([timezone])
+  @@index([isActive])
+}
+
+model Skill {
+  id                String             @id @default(cuid())
+  name              String             @unique
+  description       String?
+  category          String?
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  certifications    Certification[]
+  shiftRequirements ShiftRequirement[]
+
+  @@index([category])
+  @@index([isActive])
+}
+
+model Certification {
+  id          String    @id @default(cuid())
+  userId      String
+  locationId  String
+  skillId     String
+  certifiedAt DateTime  @default(now())
+  expiresAt   DateTime?
+  certifiedBy String?
+  isActive    Boolean   @default(true)
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  location    Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  skill       Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, locationId, skillId])
+  @@index([userId])
+  @@index([locationId])
+  @@index([skillId])
+  @@index([expiresAt])
+  @@index([isActive])
+}
+
+model Availability {
+  id            String    @id @default(cuid())
+  userId        String
+  dayOfWeek     Int?
+  startTime     String
+  endTime       String
+  isRecurring   Boolean   @default(true)
+  exceptionDate DateTime?
+  isAvailable   Boolean   @default(true)
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, exceptionDate])
+  @@index([userId])
+  @@index([dayOfWeek])
+  @@index([exceptionDate])
+}
+
+model Shift {
+  id           String             @id @default(cuid())
+  locationId   String
+  title        String
+  description  String?
+  startTime    DateTime
+  endTime      DateTime
+  status       ShiftStatus        @default(DRAFT)
+  publishedAt  DateTime?
+  publishedBy  String?
+  cutoffHours  Int                @default(48)
+  metadata     Json?
+  createdById  String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  auditLogs    AuditLog[]         @relation("ShiftAudit")
+  creator      User?              @relation("Creator", fields: [createdById], references: [id])
+  location     Location           @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  assignments  ShiftAssignment[]
+  requirements ShiftRequirement[]
+  swapRequests SwapRequest[]
+
+  @@index([locationId])
+  @@index([startTime])
+  @@index([status])
+  @@index([locationId, startTime])
+  @@index([locationId, status])
+}
+
+model ShiftRequirement {
+  id          String            @id @default(cuid())
+  shiftId     String
+  skillId     String
+  headcount   Int               @default(1)
+  priority    Int               @default(0)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  assignments ShiftAssignment[]
+  shift       Shift             @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  skill       Skill             @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([shiftId, skillId])
+  @@index([shiftId])
+  @@index([skillId])
+}
+
+model ShiftAssignment {
+  id            String           @id @default(cuid())
+  shiftId       String
+  userId        String
+  requirementId String
+  isPrimary     Boolean          @default(true)
+  clockedInAt   DateTime?
+  clockedOutAt  DateTime?
+  actualHours   Float?
+  metadata      Json?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  requirement   ShiftRequirement @relation(fields: [requirementId], references: [id])
+  shift         Shift            @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([shiftId, userId])
+  @@index([userId])
+  @@index([shiftId])
+  @@index([clockedInAt])
+  @@index([clockedOutAt])
+}
+
+model SwapRequest {
+  id          String            @id @default(cuid())
+  shiftId     String
+  requesterId String
+  responderId String?
+  status      SwapRequestStatus @default(PENDING)
+  type        SwapRequestType
+  expiresAt   DateTime?
+  resolvedAt  DateTime?
+  resolvedBy  String?
+  metadata    Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  requester   User              @relation("Requester", fields: [requesterId], references: [id])
+  responder   User?             @relation("Responder", fields: [responderId], references: [id])
+  shift       Shift             @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([expiresAt])
+  @@index([requesterId])
+  @@index([responderId])
+  @@index([shiftId])
+}
+
+model Notification {
+  id         String             @id @default(cuid())
+  userId     String
+  type       NOTIFICATION_TYPES
+  title      String
+  message    String
+  data       Json?
+  isRead     Boolean            @default(false)
+  readAt     DateTime?
+  isArchived Boolean            @default(false)
+  priority   Int                @default(0)
+  createdAt  DateTime           @default(now())
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@index([priority, createdAt])
+  @@index([isRead, createdAt])
+}
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  actorId     String?
+  action      AuditAction
+  entityType  String
+  entityId    String
+  beforeState Json?
+  afterState  Json?
+  changes     Json?
+  ipAddress   String?
+  userAgent   String?
+  location    String?
+  shiftId     String?
+  createdAt   DateTime    @default(now())
+  actor       User?       @relation("Actor", fields: [actorId], references: [id])
+  shift       Shift?      @relation("ShiftAudit", fields: [shiftId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@index([action])
+  @@index([entityType, createdAt])
+}
+
+model OvertimeWarning {
+  id             String    @id @default(cuid())
+  userId         String
+  weekStart      DateTime
+  totalHours     Float
+  warningType    String
+  details        Json
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+  resolvedAt     DateTime?
+  resolvedBy     String?
+  metadata       Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart, warningType])
+  @@index([userId])
+  @@index([weekStart])
+  @@index([warningType])
+  @@index([acknowledgedAt])
+}
+
 enum UserRole {
   ADMIN
   MANAGER
@@ -71,330 +343,3 @@ enum AuditAction {
   LOGOUT
   EXPORT
 }
-
-// Models
-model User {
-  id                String    @id @default(cuid())
-  email             String    @unique
-  password          String
-  firstName         String
-  lastName          String
-  role              UserRole
-  phone             String?
-  avatar            String?
-  notificationPrefs Json      @default("{\"inApp\": true, \"email\": false, \"push\": false}")
-  desiredHours      Int?      @default(40)
-  isActive          Boolean   @default(true)
-  lastLoginAt       DateTime?
-  refreshToken      String?
-
-  // Relations
-  managedLocations Location[]        @relation("ManagerLocations")
-  certifications   Certification[]
-  availabilities   Availability[]
-  assignedShifts   ShiftAssignment[]
-  swapRequests     SwapRequest[]     @relation("Requester")
-  swapResponses    SwapRequest[]     @relation("Responder")
-  notifications    Notification[]
-  auditLogs        AuditLog[]        @relation("Actor")
-  overtimeWarnings OvertimeWarning[]
-  createdShifts    Shift[]           @relation("Creator")
-
-  // Metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([email])
-  @@index([role])
-  @@index([isActive])
-}
-
-model Location {
-  id       String  @id @default(cuid())
-  name     String  @unique
-  address  String
-  city     String
-  state    String
-  zipCode  String
-  country  String  @default("USA")
-  timezone String
-  phone    String?
-  email    String?
-  isActive Boolean @default(true)
-  metadata Json?
-
-  // Relations
-  managers       User[]          @relation("ManagerLocations")
-  certifications Certification[]
-  shifts         Shift[]
-
-  // Metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([name, city])
-  @@index([timezone])
-  @@index([isActive])
-}
-
-model Skill {
-  id          String  @id @default(cuid())
-  name        String  @unique
-  description String?
-  category    String?
-  isActive    Boolean @default(true)
-
-  // Relations
-  certifications    Certification[]
-  shiftRequirements ShiftRequirement[]
-
-  // Metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([category])
-  @@index([isActive])
-}
-
-model Certification {
-  id          String    @id @default(cuid())
-  userId      String
-  locationId  String
-  skillId     String
-  certifiedAt DateTime  @default(now())
-  expiresAt   DateTime?
-  certifiedBy String?
-  isActive    Boolean   @default(true)
-  metadata    Json?
-
-  // Relations
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  skill    Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
-
-  // Metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, locationId, skillId])
-  @@index([userId])
-  @@index([locationId])
-  @@index([skillId])
-  @@index([expiresAt])
-  @@index([isActive])
-}
-
-model Availability {
-  id            String    @id @default(cuid())
-  userId        String
-  dayOfWeek     Int?
-  startTime     String
-  endTime       String
-  isRecurring   Boolean   @default(true)
-  exceptionDate DateTime?
-  isAvailable   Boolean   @default(true)
-  metadata      Json?
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, exceptionDate])
-  @@index([userId])
-  @@index([dayOfWeek])
-  @@index([exceptionDate])
-}
-
-model Shift {
-  id          String      @id @default(cuid())
-  locationId  String
-  title       String
-  description String?
-  startTime   DateTime
-  endTime     DateTime
-  status      ShiftStatus @default(DRAFT)
-  publishedAt DateTime?
-  publishedBy String?
-  cutoffHours Int         @default(48)
-  metadata    Json?
-  createdById String?
-
-  // Relations
-  location     Location           @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  creator      User?              @relation("Creator", fields: [createdById], references: [id])
-  requirements ShiftRequirement[]
-  assignments  ShiftAssignment[]
-  swapRequests SwapRequest[]
-  auditLogs    AuditLog[]         @relation("ShiftAudit")
-
-  // Metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([locationId])
-  @@index([startTime])
-  @@index([status])
-  @@index([locationId, startTime])
-  @@index([locationId, status])
-}
-
-model ShiftRequirement {
-  id        String @id @default(cuid())
-  shiftId   String
-  skillId   String
-  headcount Int    @default(1)
-  priority  Int    @default(0)
-
-  // Relations
-  shift       Shift             @relation(fields: [shiftId], references: [id], onDelete: Cascade)
-  skill       Skill             @relation(fields: [skillId], references: [id], onDelete: Cascade)
-  assignments ShiftAssignment[]
-
-  // Metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([shiftId, skillId])
-  @@index([shiftId])
-  @@index([skillId])
-}
-
-model ShiftAssignment {
-  id            String    @id @default(cuid())
-  shiftId       String
-  userId        String
-  requirementId String
-  isPrimary     Boolean   @default(true)
-  clockedInAt   DateTime?
-  clockedOutAt  DateTime?
-  actualHours   Float?
-  metadata      Json?
-
-  // Relations
-  shift       Shift            @relation(fields: [shiftId], references: [id], onDelete: Cascade)
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  requirement ShiftRequirement @relation(fields: [requirementId], references: [id])
-
-  // Metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([shiftId, userId])
-  @@index([userId])
-  @@index([shiftId])
-  @@index([clockedInAt])
-  @@index([clockedOutAt])
-}
-
-model SwapRequest {
-  id          String            @id @default(cuid())
-  shiftId     String
-  requesterId String
-  responderId String?
-  status      SwapRequestStatus @default(PENDING)
-  type        SwapRequestType
-  expiresAt   DateTime?
-  resolvedAt  DateTime?
-  resolvedBy  String?
-  metadata    Json?
-
-  // Relations
-  shift     Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
-  requester User  @relation("Requester", fields: [requesterId], references: [id])
-  responder User? @relation("Responder", fields: [responderId], references: [id])
-
-  // Metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([status])
-  @@index([expiresAt])
-  @@index([requesterId])
-  @@index([responderId])
-  @@index([shiftId])
-}
-
-model Notification {
-  id         String           @id @default(cuid())
-  userId     String
-  type       NOTIFICATION_TYPES
-  title      String
-  message    String
-  data       Json?
-  isRead     Boolean          @default(false)
-  readAt     DateTime?
-  isArchived Boolean          @default(false)
-  priority   Int              @default(0)
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Metadata
-  createdAt DateTime @default(now())
-
-  @@index([userId, isRead])
-  @@index([userId, createdAt])
-  @@index([priority, createdAt])
-  @@index([isRead, createdAt])
-}
-
-model AuditLog {
-  id          String      @id @default(cuid())
-  actorId     String?
-  action      AuditAction
-  entityType  String
-  entityId    String
-  beforeState Json?
-  afterState  Json?
-  changes     Json?
-  ipAddress   String?
-  userAgent   String?
-  location    String?
-
-  // Relations
-  actor   User?   @relation("Actor", fields: [actorId], references: [id])
-  shift   Shift?  @relation("ShiftAudit", fields: [shiftId], references: [id])
-  shiftId String?
-
-  // Metadata
-  createdAt DateTime @default(now())
-
-  @@index([entityType, entityId])
-  @@index([actorId])
-  @@index([createdAt])
-  @@index([action])
-  @@index([entityType, createdAt])
-}
-
-model OvertimeWarning {
-  id             String    @id @default(cuid())
-  userId         String
-  weekStart      DateTime
-  totalHours     Float
-  warningType    String
-  details        Json
-  acknowledgedAt DateTime?
-  acknowledgedBy String?
-  resolvedAt     DateTime?
-  resolvedBy     String?
-  metadata       Json?
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, weekStart, warningType])
-  @@index([userId])
-  @@index([weekStart])
-  @@index([warningType])
-  @@index([acknowledgedAt])
-}
-
-// REMOVED: Views (need preview feature)
-// REMOVED: Fulltext search (need preview feature)

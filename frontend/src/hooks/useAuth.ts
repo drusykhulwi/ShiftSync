@@ -13,6 +13,11 @@ export const useAuth = () => {
   });
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      setState(prev => ({ ...prev, isLoading: false }));
+      return;
+    }
+
     try {
       const token = authService.getStoredToken();
       const user = authService.getStoredUser();

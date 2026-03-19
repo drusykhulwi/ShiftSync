@@ -15,8 +15,10 @@ async function bootstrap() {
   // Update CORS configuration
   app.enableCors({
     origin: [
+      'https://shift-sync-omega.vercel.app',
       'https://shift-sync-git-main-drusilla-s-projects.vercel.app',
-      'http://localhost:3000'], // For local testing URLs
+      'http://localhost:3000',
+    ],  
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

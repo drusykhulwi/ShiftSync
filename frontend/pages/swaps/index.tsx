@@ -22,21 +22,22 @@ export default function SwapsPage() {
   const [isApprovalOpen, setIsApprovalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('my-requests');
 
+  const isManager = user?.role === 'MANAGER' || user?.role === 'ADMIN';
+  const isStaff = user?.role === 'STAFF';
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
       return;
     }
-    if (isAuthenticated) {
-      fetchRequests();
-    }
+    if (isAuthenticated) fetchRequests();
   }, [isAuthenticated, authLoading, router]);
 
   const fetchRequests = async () => {
     setIsLoading(true);
     try {
       const response = await swapRequestsService.getSwapRequests();
-      setRequests(response.data?.data || response.data || []);
+      setRequests((response as any).data?.data || (response as any).data || []);
     } catch (error) {
       console.error('Failed to fetch swap requests:', error);
     } finally {
@@ -99,8 +100,10 @@ export default function SwapsPage() {
       case 'my-requests':
         return requests.filter(r => r.requesterId === user.id);
       case 'pending-response':
+        // Staff: requests directed at them to respond to
         return requests.filter(r => r.responderId === user.id && r.status === 'PENDING');
       case 'pending-approval':
+        // Manager/Admin only: accepted swaps awaiting manager sign-off
         return requests.filter(r => r.status === 'ACCEPTED');
       default:
         return requests;
@@ -141,26 +144,28 @@ export default function SwapsPage() {
               }
             }}
             onCancel={handleCancel}
-            onViewShift={(shiftId) => router.push(`/schedule/${shiftId}`)}
+            onViewShift={(shiftId) => router.push(isStaff ? '/staff/schedule' : '/schedule')}
           />
         ))}
       </div>
     );
   };
 
-  const isManager = user?.role === 'MANAGER' || user?.role === 'ADMIN';
-
+  // Build tabs based on role
   const tabs = [
     {
       id: 'my-requests',
       label: 'My Requests',
       content: renderRequestList('my-requests'),
     },
+    // Staff: see requests they need to respond to
+    // Manager: see all pending responses too
     {
       id: 'pending-response',
-      label: 'Respond to Requests',
+      label: isManager ? 'Staff Responses' : 'Respond to Requests',
       content: renderRequestList('pending-response'),
     },
+    // Manager/Admin only: final approval step
     ...(isManager ? [{
       id: 'pending-approval',
       label: 'Pending Approval',
@@ -187,7 +192,9 @@ export default function SwapsPage() {
     <Layout>
       <div className="p-4 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Swap Requests</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+            {isStaff ? 'My Swap Requests' : 'Swap Requests'}
+          </h1>
           <Button onClick={() => setIsCreateOpen(true)} className="w-full sm:w-auto">
             + New Request
           </Button>

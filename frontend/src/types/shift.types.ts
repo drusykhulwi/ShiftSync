@@ -67,4 +67,5 @@ export interface AssignStaffDto {
   userId: string;
   requirementId: string;
   isPrimary?: boolean;
+  overrideReason?: string; 
 }

@@ -18,7 +18,6 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto, actorRole: string, actorId?: string) {
-    // Check if user exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email: createUserDto.email },
     });
@@ -34,10 +33,8 @@ export class UsersService {
       });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
-    // Create user
     const user = await this.prisma.user.create({
       data: {
         email: createUserDto.email,
@@ -55,7 +52,6 @@ export class UsersService {
       },
     });
 
-    // Handle location assignments for managers
     if (createUserDto.role === 'MANAGER' && createUserDto.locationIds?.length) {
       await this.prisma.user.update({
         where: { id: user.id },
@@ -67,28 +63,16 @@ export class UsersService {
       });
     }
 
-    // Handle certifications for staff
-    if (createUserDto.role === 'STAFF' && createUserDto.certificationIds?.length) {
-      // This would connect certifications - we'll implement later
-    }
-
     return this.findOne(user.id);
   }
 
   async findAll(role?: string, locationId?: string, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
-    
     const where: any = {};
     
-    if (role) {
-      where.role = role;
-    }
-
-    // If locationId is provided, filter users by that location
+    if (role) where.role = role;
     if (locationId) {
-      where.certifications = {
-        some: { locationId }
-      };
+      where.certifications = { some: { locationId } };
     }
 
     const [users, total] = await Promise.all([
@@ -99,10 +83,7 @@ export class UsersService {
         include: {
           managedLocations: true,
           certifications: {
-            include: {
-              location: true,
-              skill: true,
-            },
+            include: { location: true, skill: true },
           },
           availabilities: true,
         },
@@ -130,10 +111,7 @@ export class UsersService {
       include: {
         managedLocations: true,
         certifications: {
-          include: {
-            location: true,
-            skill: true,
-          },
+          include: { location: true, skill: true },
         },
         availabilities: true,
       },
@@ -154,10 +132,8 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto, actorRole: string, actorId?: string) {
-    // Check if user exists
     await this.findOne(id);
 
-    // Only ADMIN can update roles
     if (updateUserDto.role && actorRole !== 'ADMIN') {
       throw new ForbiddenException({
         success: false,
@@ -175,10 +151,7 @@ export class UsersService {
       include: {
         managedLocations: true,
         certifications: {
-          include: {
-            location: true,
-            skill: true,
-          },
+          include: { location: true, skill: true },
         },
       },
     });
@@ -187,7 +160,7 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
-    const user = await this.findOne(userId);
+    await this.findOne(userId);
 
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
@@ -198,7 +171,6 @@ export class UsersService {
   }
 
   async remove(id: string, actorRole: string) {
-    // Only ADMIN can delete users
     if (actorRole !== 'ADMIN') {
       throw new ForbiddenException({
         success: false,
@@ -212,7 +184,6 @@ export class UsersService {
 
     await this.findOne(id);
 
-    // Soft delete - just deactivate
     await this.prisma.user.update({
       where: { id },
       data: { isActive: false },
@@ -229,9 +200,7 @@ export class UsersService {
     const users = await this.prisma.user.findMany({
       where: {
         role: 'STAFF',
-        certifications: {
-          some: { locationId }
-        }
+        certifications: { some: { locationId } },
       },
       include: {
         certifications: {
@@ -247,16 +216,8 @@ export class UsersService {
 
   async addCertification(userId: string, skillId: string, locationId: string, certifiedBy: string) {
     const certification = await this.prisma.certification.create({
-      data: {
-        userId,
-        skillId,
-        locationId,
-        certifiedBy,
-      },
-      include: {
-        skill: true,
-        location: true,
-      },
+      data: { userId, skillId, locationId, certifiedBy },
+      include: { skill: true, location: true },
     });
 
     return certification;
@@ -267,9 +228,54 @@ export class UsersService {
       where: { id: certificationId },
     });
 
+    return { success: true, message: 'Certification removed' };
+  }
+
+  // ── Availability methods ────────────────────────────────────────────────
+
+  async getAvailability(userId: string) {
+    const availabilities = await this.prisma.availability.findMany({
+      where: { userId },
+      orderBy: { dayOfWeek: 'asc' },
+    });
+
     return {
       success: true,
-      message: 'Certification removed',
+      data: availabilities,
+      timestamp: new Date().toISOString(),
     };
+  }
+
+  async setAvailability(userId: string, availability: any[]) {
+    // Verify user exists
+    await this.findOne(userId);
+
+    // Replace all recurring availability in a transaction
+    await this.prisma.$transaction(async (prisma) => {
+      // Delete existing recurring availability for this user
+      await prisma.availability.deleteMany({
+        where: {
+          userId,
+          isRecurring: true,
+        },
+      });
+
+      // Create new availability records
+      if (availability.length > 0) {
+        await prisma.availability.createMany({
+          data: availability.map((a) => ({
+            userId,
+            dayOfWeek: a.dayOfWeek,
+            startTime: a.startTime,
+            endTime: a.endTime,
+            isAvailable: a.isAvailable ?? true,
+            isRecurring: true,
+          })),
+        });
+      }
+    });
+
+    // Return updated availability
+    return this.getAvailability(userId);
   }
 }

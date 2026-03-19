@@ -27,7 +27,7 @@ import { LocationAccess } from '../../common/decorators/location-access.decorato
 export class LocationsController {
   constructor(
     private readonly locationsService: LocationsService,
-    private readonly prisma: PrismaService, // This is the ONLY declaration
+    private readonly prisma: PrismaService,
   ) {}
 
   @Post()
@@ -40,27 +40,29 @@ export class LocationsController {
   }
 
   @Get()
-  @Roles('ADMIN', 'MANAGER')
+  @Roles('ADMIN', 'MANAGER', 'STAFF') // ← added STAFF
   async findAll(
     @CurrentUser() user: any,
     @Query('page') page = 1,
     @Query('limit') limit = 10,
     @Query('includeInactive') includeInactive = false,
   ) {
-    // Managers only see active locations
-    if (user.role === 'MANAGER') {
+    // Staff and managers only see active locations
+    if (user.role === 'MANAGER' || user.role === 'STAFF') {
       includeInactive = false;
     }
     return this.locationsService.findAll(+page, +limit, includeInactive);
   }
 
   @Get('my-locations')
-  @Roles('MANAGER')
+  @Roles('MANAGER', 'STAFF') // ← added STAFF
   async getMyLocations(@CurrentUser() user: any) {
     const locations = await this.prisma.location.findMany({
       where: {
-        managers: { some: { id: user.id } },
         isActive: true,
+        ...(user.role === 'MANAGER'
+          ? { managers: { some: { id: user.id } } }
+          : { certifications: { some: { userId: user.id, isActive: true } } }),
       },
     });
     return { data: locations };
@@ -74,7 +76,7 @@ export class LocationsController {
   }
 
   @Get(':id')
-  @Roles('ADMIN', 'MANAGER')
+  @Roles('ADMIN', 'MANAGER', 'STAFF') // ← added STAFF
   @LocationAccess({ param: 'id' })
   async findOne(@Param('id') id: string) {
     return this.locationsService.findOne(id);

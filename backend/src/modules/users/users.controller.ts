@@ -4,7 +4,8 @@ import {
   Get, 
   Post, 
   Body, 
-  Patch, 
+  Patch,
+  Put,
   Param, 
   Delete, 
   Query,
@@ -41,12 +42,9 @@ export class UsersController {
     @Query('page') page = 1,
     @Query('limit') limit = 10,
   ) {
-    // Managers can only see their location
     if (user.role === 'MANAGER' && !locationId) {
-      // If no location specified, use their first managed location
       locationId = user.locations?.[0];
     }
-    
     return this.usersService.findAll(role, locationId, +page, +limit);
   }
 
@@ -69,6 +67,41 @@ export class UsersController {
   async getStaffByLocation(@Param('locationId') locationId: string) {
     return this.usersService.getStaffByLocation(locationId);
   }
+
+  // ── Availability endpoints ──────────────────────────────────────────────
+
+  // Get availability for a user
+  // Staff can read their own; managers/admins can read anyone's
+  @Get(':id/availability')
+  @Roles('ADMIN', 'MANAGER', 'STAFF')
+  async getAvailability(
+    @Param('id') id: string,
+    @CurrentUser() user: any,
+  ) {
+    // Staff can only read their own availability
+    if (user.role === 'STAFF' && user.id !== id) {
+      return { data: [] };
+    }
+    return this.usersService.getAvailability(id);
+  }
+
+  // Save/replace weekly availability for a user
+  // Staff can update their own; managers/admins can update anyone's
+  @Put(':id/availability')
+  @Roles('ADMIN', 'MANAGER', 'STAFF')
+  async setAvailability(
+    @Param('id') id: string,
+    @Body() body: { availability: any[] },
+    @CurrentUser() user: any,
+  ) {
+    // Staff can only update their own availability
+    if (user.role === 'STAFF' && user.id !== id) {
+      return { success: false, error: 'Cannot update another user\'s availability' };
+    }
+    return this.usersService.setAvailability(id, body.availability);
+  }
+
+  // ── Standard CRUD ───────────────────────────────────────────────────────
 
   @Get(':id')
   @Roles('ADMIN', 'MANAGER')

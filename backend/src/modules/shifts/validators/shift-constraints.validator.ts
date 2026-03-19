@@ -211,7 +211,7 @@ export class ShiftConstraintsValidator {
       }
     });
 
-    const consecutiveDays = this.calculateConsecutiveDays(recentShifts, shift);
+    const consecutiveDays = this.calculateConsecutiveDays(recentShifts, { shift });
     
     if (consecutiveDays === 7) {
       violations.push({

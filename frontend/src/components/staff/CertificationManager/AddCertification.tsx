@@ -24,6 +24,7 @@ export const AddCertification: React.FC<AddCertificationProps> = ({
   const [selectedLocation, setSelectedLocation] = useState<string>('');
   const [expiryDate, setExpiryDate] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,8 +33,9 @@ export const AddCertification: React.FC<AddCertificationProps> = ({
           skillsService.getSkills(),
           locationsService.getLocations(),
         ]);
-        setSkills(skillsRes.data || []);
-        setLocations(locationsRes.data || []);
+        // Unwrap double-wrapped responses
+        setSkills((skillsRes as any).data?.data || (skillsRes as any).data || []);
+        setLocations((locationsRes as any).data?.data || (locationsRes as any).data || []);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       }
@@ -46,9 +48,13 @@ export const AddCertification: React.FC<AddCertificationProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSkill || !selectedLocation) return;
+    if (!selectedSkill || !selectedLocation) {
+      setError('Please select both a skill and a location');
+      return;
+    }
 
     setIsLoading(true);
+    setError('');
     try {
       await staffService.addCertification(staffId, {
         skillId: selectedSkill,
@@ -56,7 +62,8 @@ export const AddCertification: React.FC<AddCertificationProps> = ({
         expiresAt: expiryDate ? new Date(expiryDate) : undefined,
       });
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
+      setError(error.response?.data?.error?.message || 'Failed to add certification');
       console.error('Failed to add certification:', error);
     } finally {
       setIsLoading(false);
@@ -65,22 +72,26 @@ export const AddCertification: React.FC<AddCertificationProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
+
       <Select
         label="Skill"
         value={skillOptions.find(opt => opt.value === selectedSkill) || null}
         onChange={(opt) => setSelectedSkill(opt?.value?.toString() || '')}
         options={skillOptions}
         placeholder="Select a skill"
-        required
       />
 
       <Select
         label="Location"
         value={locationOptions.find(opt => opt.value === selectedLocation) || null}
-        onChange={(opt) => setSelectedSkill(opt?.value?.toString() || '')}
+        onChange={(opt) => setSelectedLocation(opt?.value?.toString() || '')} // ← was wrongly setting selectedSkill
         options={locationOptions}
         placeholder="Select a location"
-        required
       />
 
       <DatePicker
@@ -89,11 +100,11 @@ export const AddCertification: React.FC<AddCertificationProps> = ({
         onChange={setExpiryDate}
       />
 
-      <div className="flex justify-end space-x-3 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
           Cancel
         </Button>
-        <Button type="submit" isLoading={isLoading}>
+        <Button type="submit" isLoading={isLoading} className="w-full sm:w-auto">
           Add Certification
         </Button>
       </div>

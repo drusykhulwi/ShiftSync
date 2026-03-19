@@ -81,6 +81,7 @@ export class AuthService {
           firstName: user.firstName,
           lastName: user.lastName,
           role: user.role,
+          locations: payload.locations || [], 
         },
       },
       timestamp: new Date().toISOString(),

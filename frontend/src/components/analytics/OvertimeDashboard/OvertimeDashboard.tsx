@@ -16,8 +16,8 @@ interface OvertimeDashboardProps {
 
 export const OvertimeDashboard: React.FC<OvertimeDashboardProps> = ({ locationId }) => {
   const [dateRange, setDateRange] = useState({
-    startDate: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    endDate: new Date().toISOString(),
   });
   const [groupBy, setGroupBy] = useState<'DAY' | 'WEEK' | 'MONTH'>('WEEK');
   const [report, setReport] = useState<OvertimeReport | null>(null);
@@ -38,32 +38,43 @@ export const OvertimeDashboard: React.FC<OvertimeDashboardProps> = ({ locationId
   const fetchLocations = async () => {
     try {
       const response = await locationsService.getLocations();
-      setLocations(response.data || []);
-      if (!selectedLocation && response.data?.length > 0) {
-        setSelectedLocation(response.data[0].id);
+      const locationList = (response as any).data?.data || (response as any).data || [];
+      setLocations(locationList);
+      if (!selectedLocation && locationList.length > 0) {
+        const firstId = locationList[0].id;
+        setSelectedLocation(firstId);
+        // Fetch report immediately with the known ID
+        await fetchReportForLocation(firstId);
       }
     } catch (error) {
       console.error('Failed to fetch locations:', error);
     }
   };
 
-  const fetchReport = async () => {
-    if (!selectedLocation) return;
-    
+  // Rename fetchReport to accept locationId param:
+  const fetchReportForLocation = async (locId: string) => {
+    console.log('Fetching report for locationId:', locId);
+    if (!locId) return;
     setIsLoading(true);
     try {
       const data = await analyticsService.getOvertimeReport({
-        locationId: selectedLocation,
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
+      ...(locId ? { locationId: locId } : {}),
+        startDate: new Date(dateRange.startDate).toISOString(),
+        endDate: new Date(dateRange.endDate).toISOString(),
         groupBy,
       });
-      setReport(data);
+      setReport((data as any).data?.data || (data as any).data || data);
     } catch (error) {
       console.error('Failed to fetch overtime report:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Keep fetchReport for manual refetch triggered by filter changes:
+  const fetchReport = async () => {
+    if (!selectedLocation) return;
+    await fetchReportForLocation(selectedLocation);
   };
 
   const handleExport = async (format: 'json' | 'csv') => {
@@ -116,16 +127,20 @@ export const OvertimeDashboard: React.FC<OvertimeDashboardProps> = ({ locationId
             <div className="flex space-x-2">
               <input
                 type="date"
-                value={dateRange.startDate}
-                onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                value={dateRange.startDate.split('T')[0]}
+                onChange={(e) => setDateRange(prev => ({
+                  ...prev,
+                  startDate: new Date(e.target.value).toISOString()
+                }))}
               />
               <span className="text-gray-500 self-center">to</span>
               <input
                 type="date"
-                value={dateRange.endDate}
-                onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                value={dateRange.endDate.split('T')[0]}
+                onChange={(e) => setDateRange(prev => ({
+                  ...prev,
+                  endDate: new Date(e.target.value).toISOString()
+                }))}
               />
             </div>
           </div>

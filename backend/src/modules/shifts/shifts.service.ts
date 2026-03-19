@@ -408,7 +408,10 @@ export class ShiftsService {
 
   // ========== ASSIGN STAFF ==========
 
-  async assignStaff(shiftId: string, assignStaffDto: AssignStaffDto, userId: string) {
+  // REPLACE only the assignStaff method in backend/src/modules/shifts/shifts.service.ts
+// Find the existing assignStaff method and replace it with this:
+
+  async assignStaff(shiftId: string, assignStaffDto: AssignStaffDto, actorId: string) {
     const shift = await this.findOne(shiftId);
 
     // Check if shift can be modified
@@ -433,8 +436,17 @@ export class ShiftsService {
       assignStaffDto.requirementId
     );
 
-    if (!validation.valid) {
-      // Find alternatives
+    // Separate hard errors from warnings
+    const hardErrors = validation.violations?.filter(
+      (v: any) => !v.type.includes('WARNING')
+    ) || [];
+
+    const warnings = validation.violations?.filter(
+      (v: any) => v.type.includes('WARNING')
+    ) || [];
+
+    // Block only on hard errors — unless overrideReason is provided by manager/admin
+    if (hardErrors.length > 0 && !assignStaffDto.overrideReason) {
       const alternatives = await this.validator.findAlternatives(
         shiftId,
         assignStaffDto.requirementId,
@@ -447,7 +459,8 @@ export class ShiftsService {
           code: ERROR_CODES.SHIFT_CONFLICT,
           message: 'Cannot assign staff due to constraint violations',
           details: {
-            violations: validation.errors || validation.violations,
+            violations: hardErrors,
+            warnings,
             alternatives,
           },
         },
@@ -469,13 +482,17 @@ export class ShiftsService {
       },
     });
 
-    // Log audit
+    // Log audit — include override reason if used
     await this.auditService.log({
-      actorId: userId,
+      actorId,
       action: 'ASSIGN',
       entityType: 'ShiftAssignment',
       entityId: assignment.id,
-      afterState: assignment,
+      afterState: {
+        ...assignment,
+        overrideReason: assignStaffDto.overrideReason,
+        violations: hardErrors,
+      },
     });
 
     // Send notification to assigned staff
@@ -483,26 +500,44 @@ export class ShiftsService {
       userId: assignStaffDto.userId,
       type: 'SHIFT_ASSIGNED',
       title: 'New Shift Assignment',
-      message: `You've been assigned to "${shift.title}" on ${shift.startTime}`,
+      message: `You've been assigned to "${shift.title}" on ${new Date(shift.startTime).toLocaleDateString()}`,
       data: { shiftId, assignmentId: assignment.id },
     });
 
-    // Create overtime warning if needed
-    if (validation.warnings?.length) {
-      for (const warning of validation.warnings) {
-        await this.prisma.overtimeWarning.create({
-          data: {
-            userId: assignStaffDto.userId,
-            weekStart: this.validator['getWeekStart'](shift.startTime),
-            totalHours: 0, // Will be calculated later
-            warningType: warning.type,
-            details: warning,
-          },
+    // Create overtime warning notifications if any
+    if (warnings.length > 0) {
+      for (const warning of warnings) {
+        await this.notificationsService.create({
+          userId: assignStaffDto.userId,
+          type: 'OVERTIME_WARNING',
+          title: 'Overtime Warning',
+          message: warning.message,
+          data: { shiftId, warningType: warning.type },
         });
+
+        // Also log to overtimeWarning table
+        try {
+          await this.prisma.overtimeWarning.create({
+            data: {
+              userId: assignStaffDto.userId,
+              weekStart: this.validator['getWeekStart'](shift.startTime),
+              totalHours: 0,
+              warningType: warning.type,
+              details: warning,
+            },
+          });
+        } catch (e) {
+          // Don't fail the assignment if warning logging fails
+        }
       }
     }
 
-    return assignment;
+    return {
+      success: true,
+      data: assignment,
+      warnings,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   async unassignStaff(shiftId: string, assignmentId: string, userId: string) {

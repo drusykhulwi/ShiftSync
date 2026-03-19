@@ -21,7 +21,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
     ADMIN: [
       { href: '/admin/dashboard', icon: '📊', label: 'Dashboard' },
       { href: '/admin/users', icon: '👥', label: 'Users' },
-      { href: '/admin/locations', icon: '📍', label: 'Locations' },
+      { href: '/locations', icon: '📍', label: 'Locations' },
       { href: '/admin/schedule', icon: '📅', label: 'Schedule' },
       { href: '/admin/reports', icon: '📈', label: 'Reports' },
       ...commonItems

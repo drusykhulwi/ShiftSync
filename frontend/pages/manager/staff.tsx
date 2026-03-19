@@ -23,7 +23,7 @@ export default function ManagerStaffPage() {
       router.push('/dashboard');
       return;
     }
-    if (user?.locations?.[0]) {
+    if (!authLoading && isAuthenticated) {
       fetchStaff();
     }
   }, [isAuthenticated, authLoading, user, router]);
@@ -31,22 +31,24 @@ export default function ManagerStaffPage() {
   const fetchStaff = async () => {
     setIsLoading(true);
     try {
-        const locationId = user?.locations?.[0];
-        if (!locationId) return;
-        const response = await staffService.getStaffByLocation(locationId);
-        setStaff((response as any).data?.data || (response as any).data || []);
+      const locationId = (user as any)?.locations?.[0];
+      // Use location-specific fetch if available, otherwise fall back to all staff
+      const response = locationId
+        ? await staffService.getStaffByLocation(locationId)
+        : await staffService.getStaff();
+      setStaff((response as any).data?.data || (response as any).data || []);
     } catch (error) {
-        console.error('Failed to fetch staff:', error);
+      console.error('Failed to fetch staff:', error);
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-   };
+  };
 
   if (authLoading) {
     return (
       <Layout>
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500" />
         </div>
       </Layout>
     );
@@ -54,14 +56,14 @@ export default function ManagerStaffPage() {
 
   return (
     <Layout>
-      <div className="p-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Staff Management</h1>
+      <div className="p-4 sm:p-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">Staff Management</h1>
         <StaffList
           staff={staff}
           isLoading={isLoading}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
-          onStaffClick={(staff) => router.push(`/staff/${staff.id}`)}
+          onStaffClick={(member) => router.push(`/staff/${member.id}`)}
         />
       </div>
     </Layout>

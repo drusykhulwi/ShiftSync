@@ -6,7 +6,7 @@ Is this Readme okay
 ShiftSync is a comprehensive workforce scheduling platform built for **Coastal Eats**, a restaurant group operating **4 locations** across **2 time zones**. The platform solves real-world scheduling challenges including staff callouts, overtime costs, unfair shift distribution, and multi-location visibility.
 
 ### **Live Demo**
-- **Frontend**: [https://shift-sync-git-main-drusilla-s-projects.vercel.app/](https://shift-sync-git-main-drusilla-s-projects.vercel.app/)
+- **Frontend**: [https://shift-sync-omega.vercel.app/](https://shift-sync-omega.vercel.app/)
 - **Backend API**: [https://shiftsync-backend.onrender.com/api](https://shiftsync-backend.onrender.com/api)
 
 ---
@@ -102,7 +102,7 @@ ShiftSync is a comprehensive workforce scheduling platform built for **Coastal E
 
 | Service | URL |
 |---------|-----|
-| **Frontend** | [https://shift-sync-git-main-drusilla-s-projects.vercel.app/](https://shift-sync-git-main-drusilla-s-projects.vercel.app/) |
+| **Frontend** | [https://shift-sync-omega.vercel.app/](https://shift-sync-omega.vercel.app/) |
 | **Backend API** | [https://shiftsync-backend.onrender.com/api](https://shiftsync-backend.onrender.com/api) |
 | **GitHub Repository** | [https://github.com/drusykhulwi/ShiftSync.git](https://github.com/drusykhulwi/ShiftSync.git) |
 

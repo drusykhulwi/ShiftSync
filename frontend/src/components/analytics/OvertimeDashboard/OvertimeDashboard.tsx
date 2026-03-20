@@ -248,52 +248,54 @@ export const OvertimeDashboard: React.FC<OvertimeDashboardProps> = ({ locationId
           {/* Top Employees */}
           <Card>
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Overtime Employees</h3>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Hours</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Regular</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Overtime</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cost</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {report.details
-                    .sort((a, b) => b.overtimeHours - a.overtimeHours)
-                    .slice(0, 5)
-                    .map((employee) => (
-                      <tr key={employee.userId}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {employee.userName}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {employee.totalHours.toFixed(1)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {employee.regularHours.toFixed(1)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {employee.overtimeHours.toFixed(1)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          ${employee.overtimeCost.toFixed(0)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            employee.riskLevel === 'HIGH' ? 'bg-red-100 text-red-800' :
-                            employee.riskLevel === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
-                            {employee.riskLevel}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
+            <div className="overflow-x-auto -mx-6">
+              <div className="inline-block min-w-full align-middle px-6">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Hours</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Regular</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Overtime</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cost</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {report.details
+                      .sort((a, b) => b.overtimeHours - a.overtimeHours)
+                      .slice(0, 5)
+                      .map((employee) => (
+                        <tr key={employee.userId}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {employee.userName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {employee.totalHours.toFixed(1)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {employee.regularHours.toFixed(1)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {employee.overtimeHours.toFixed(1)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${employee.overtimeCost.toFixed(0)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-xs rounded-full ${
+                              employee.riskLevel === 'HIGH' ? 'bg-red-100 text-red-800' :
+                              employee.riskLevel === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-green-100 text-green-800'
+                            }`}>
+                              {employee.riskLevel}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </Card>
         </>

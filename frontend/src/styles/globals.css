@@ -37,3 +37,58 @@
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
 }
+
+/* frontend/src/styles/globals.css */
+
+/* Responsive table utilities */
+.table-responsive {
+  @apply overflow-x-auto -mx-4 sm:mx-0;
+}
+
+.table-responsive-inner {
+  @apply inline-block min-w-full align-middle px-4 sm:px-0;
+}
+
+/* Scrollbar styling for better UX */
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track,
+.overflow-x-auto::-webkit-scrollbar-track {
+  @apply bg-gray-100 rounded;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb,
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 rounded;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover,
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500;
+}
+
+/* Mobile-first breakpoint utilities */
+@screen sm {
+  .sm\:table-responsive {
+    overflow-x: visible;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
+  .sm\:table-responsive-inner {
+    display: table;
+    min-width: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+/* Prevent content shift on modal open */
+body.modal-open {
+  overflow: hidden;
+  padding-right: var(--scrollbar-width, 0px);
+}

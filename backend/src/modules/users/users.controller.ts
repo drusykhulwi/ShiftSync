@@ -1,16 +1,7 @@
 // backend/src/modules/users/users.controller.ts
 import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch,
-  Put,
-  Param, 
-  Delete, 
-  Query,
-  UseGuards,
-  Request 
+  Controller, Get, Post, Body, Patch, Put,
+  Param, Delete, Query, UseGuards, HttpCode, HttpStatus
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -36,7 +27,7 @@ export class UsersController {
   @Get()
   @Roles('ADMIN', 'MANAGER')
   async findAll(
-    @CurrentUser() user: any,     
+    @CurrentUser() user: any,
     @Query('role') role?: string,
     @Query('locationId') locationId?: string,
     @Query('page') page = 1,
@@ -54,10 +45,7 @@ export class UsersController {
   }
 
   @Patch('profile')
-  async updateProfile(
-    @Body() updateProfileDto: UpdateProfileDto,
-    @CurrentUser() user: any,
-  ) {
+  async updateProfile(@Body() updateProfileDto: UpdateProfileDto, @CurrentUser() user: any) {
     return this.usersService.updateProfile(user.id, updateProfileDto);
   }
 
@@ -68,25 +56,15 @@ export class UsersController {
     return this.usersService.getStaffByLocation(locationId);
   }
 
-  // ── Availability endpoints ──────────────────────────────────────────────
+  // ── Availability ────────────────────────────────────────────────────────
 
-  // Get availability for a user
-  // Staff can read their own; managers/admins can read anyone's
   @Get(':id/availability')
   @Roles('ADMIN', 'MANAGER', 'STAFF')
-  async getAvailability(
-    @Param('id') id: string,
-    @CurrentUser() user: any,
-  ) {
-    // Staff can only read their own availability
-    if (user.role === 'STAFF' && user.id !== id) {
-      return { data: [] };
-    }
+  async getAvailability(@Param('id') id: string, @CurrentUser() user: any) {
+    if (user.role === 'STAFF' && user.id !== id) return { data: [] };
     return this.usersService.getAvailability(id);
   }
 
-  // Save/replace weekly availability for a user
-  // Staff can update their own; managers/admins can update anyone's
   @Put(':id/availability')
   @Roles('ADMIN', 'MANAGER', 'STAFF')
   async setAvailability(
@@ -94,11 +72,39 @@ export class UsersController {
     @Body() body: { availability: any[] },
     @CurrentUser() user: any,
   ) {
-    // Staff can only update their own availability
     if (user.role === 'STAFF' && user.id !== id) {
       return { success: false, error: 'Cannot update another user\'s availability' };
     }
     return this.usersService.setAvailability(id, body.availability);
+  }
+
+  // Add a single exception date
+  @Post(':id/availability/exception')
+  @Roles('ADMIN', 'MANAGER', 'STAFF')
+  async addException(
+    @Param('id') id: string,
+    @Body() body: any,
+    @CurrentUser() user: any,
+  ) {
+    if (user.role === 'STAFF' && user.id !== id) {
+      return { success: false, error: 'Cannot update another user\'s availability' };
+    }
+    return this.usersService.addException(id, body);
+  }
+
+  // Delete a specific availability record
+  @Delete(':id/availability/:availabilityId')
+  @Roles('ADMIN', 'MANAGER', 'STAFF')
+  @HttpCode(HttpStatus.OK)
+  async deleteAvailability(
+    @Param('id') id: string,
+    @Param('availabilityId') availabilityId: string,
+    @CurrentUser() user: any,
+  ) {
+    if (user.role === 'STAFF' && user.id !== id) {
+      return { success: false, error: 'Cannot update another user\'s availability' };
+    }
+    return this.usersService.deleteAvailability(id, availabilityId);
   }
 
   // ── Standard CRUD ───────────────────────────────────────────────────────

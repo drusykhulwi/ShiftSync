@@ -26,8 +26,7 @@ export default function AdminSchedulePage() {
   }
 
   return (
-    <Layout>
-      <SchedulePage />
-    </Layout>
+    <SchedulePage />
+    
   );
 }

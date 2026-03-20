@@ -20,6 +20,12 @@ export const StaffCard: React.FC<StaffCardProps> = ({ staff, onClick }) => {
   // Mock hours - replace with real data
   const weeklyHours = 32;
 
+  const getSkillName = (cert: any) =>
+    cert.skillName || cert.skill?.name || '—';
+
+  const getLocationName = (cert: any) =>
+    cert.locationName || cert.location?.name || '—';
+
   return (
     <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onClick?.(staff)}>
       <div className="flex items-start space-x-4">
@@ -43,7 +49,7 @@ export const StaffCard: React.FC<StaffCardProps> = ({ staff, onClick }) => {
             <div className="flex flex-wrap gap-1">
               {staff.certifications?.slice(0, 3).map((cert) => (
                 <Badge key={cert.id} variant="info" size="sm">
-                  {cert.skillName}
+                  {getSkillName(cert)}
                 </Badge>
               ))}
               {(staff.certifications?.length || 0) > 3 && (
@@ -55,7 +61,9 @@ export const StaffCard: React.FC<StaffCardProps> = ({ staff, onClick }) => {
           </div>
 
           <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
-            <span>📍 {staff.certifications?.[0]?.locationName || 'No location'}</span>
+            {staff.certifications?.slice(0, 3).map((cert) => (
+              <span key={cert.id} >📍 {getLocationName(cert)}</span>
+            ))}
             <span>📅 Joined {new Date(staff.createdAt || '').toLocaleDateString()}</span>
           </div>
         </div>

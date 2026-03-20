@@ -18,6 +18,7 @@ export interface UpdateUserDto {
   phone?: string;
   desiredHours?: number;
   isActive?: boolean;
+  role: 'ADMIN' | 'MANAGER' | 'STAFF';
 }
 
 export interface Certification {

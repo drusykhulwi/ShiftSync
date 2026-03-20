@@ -23,55 +23,71 @@ export const CreateSwapRequest: React.FC<CreateSwapRequestProps> = ({
   onSuccess,
 }) => {
   const [myShifts, setMyShifts] = useState<any[]>([]);
-  const [selectedShift, setSelectedShift] = useState<string>('');
+  const [selectedShiftId, setSelectedShiftId] = useState<string>('');
   const [selectedResponder, setSelectedResponder] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'SWAP' | 'DROP'>('SWAP');
 
   useEffect(() => {
-    if (isOpen) {
-      fetchMyShifts();
+    if (isOpen && userId) fetchMyShifts();
+    if (!isOpen) {
+      setSelectedShiftId('');
+      setSelectedResponder('');
+      setError('');
     }
-  }, [isOpen]);
+  }, [isOpen, userId]);
 
   const fetchMyShifts = async () => {
+    setIsFetching(true);
     try {
+      const now = new Date();
       const response = await shiftsService.getShifts({
-        startDate: new Date().toISOString(),
+        startDate: now.toISOString(),
+        limit: 50,
       });
-      // Fix double-wrapping
-      const allShifts = response.data.data || response.data || [];
+      // Unwrap double-wrapped response
+      const allShifts = (response as any).data?.data || (response as any).data || [];
+
+      // Filter to only shifts this user is assigned to
+      // Check both a.userId and a.user?.id
       const userShifts = allShifts.filter((shift: any) =>
         shift.requirements?.some((r: any) =>
-          r.assignments?.some((a: any) => a.userId === userId)
+          r.assignments?.some(
+            (a: any) => a.userId === userId || a.user?.id === userId
+          )
         )
       );
       setMyShifts(userShifts);
     } catch (error) {
       console.error('Failed to fetch shifts:', error);
+    } finally {
+      setIsFetching(false);
     }
   };
 
   const shiftOptions = myShifts.map(shift => ({
     value: shift.id,
-    label: `${shift.title} - ${new Date(shift.startTime).toLocaleDateString()}`,
+    label: `${shift.title} — ${new Date(shift.startTime).toLocaleDateString()} ${new Date(shift.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
   }));
 
-  const selectedShiftData = myShifts.find(s => s.id === selectedShift);
+  const selectedShiftData = myShifts.find(s => s.id === selectedShiftId);
 
   const handleCreateSwap = async () => {
-    if (!selectedShift || !selectedResponder) return;
+    if (!selectedShiftId || !selectedResponder) return;
     setIsLoading(true);
+    setError('');
     try {
       await swapRequestsService.createSwapRequest({
-        shiftId: selectedShift,
+        shiftId: selectedShiftId,
         type: 'SWAP',
         responderId: selectedResponder,
       });
       onSuccess?.();
       onClose();
-    } catch (error) {
-      console.error('Failed to create swap request:', error);
+    } catch (error: any) {
+      setError(error.response?.data?.error?.message || 'Failed to create swap request');
     } finally {
       setIsLoading(false);
     }
@@ -79,19 +95,24 @@ export const CreateSwapRequest: React.FC<CreateSwapRequestProps> = ({
 
   const handleCreateDrop = async (shiftId: string) => {
     setIsLoading(true);
+    setError('');
     try {
-      await swapRequestsService.createSwapRequest({
-        shiftId,
-        type: 'DROP',
-      });
+      await swapRequestsService.createSwapRequest({ shiftId, type: 'DROP' });
       onSuccess?.();
       onClose();
-    } catch (error) {
-      console.error('Failed to create drop request:', error);
+    } catch (error: any) {
+      setError(error.response?.data?.error?.message || 'Failed to create drop request');
     } finally {
       setIsLoading(false);
     }
   };
+
+  const emptyState = (
+    <div className="text-center py-6 text-gray-400">
+      <p className="text-3xl mb-2">📅</p>
+      <p className="text-sm">No upcoming assigned shifts found</p>
+    </div>
+  );
 
   const tabs = [
     {
@@ -99,27 +120,41 @@ export const CreateSwapRequest: React.FC<CreateSwapRequestProps> = ({
       label: 'Request Swap',
       content: (
         <div className="space-y-4">
-          <Select
-            label="Select Shift"
-            value={shiftOptions.find(opt => opt.value === selectedShift) || null}
-            onChange={(opt) => setSelectedShift(opt?.value as string || '')}
-            options={shiftOptions}
-            placeholder="Choose a shift to swap"
-          />
-          {selectedShiftData && (
-            <SelectResponder
-              locationId={selectedShiftData.locationId}
-              selectedUserId={selectedResponder}
-              onSelect={setSelectedResponder}
-            />
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+          {isFetching ? (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500" />
+            </div>
+          ) : myShifts.length === 0 ? emptyState : (
+            <>
+              <Select
+                label="Select Shift to Swap"
+                value={shiftOptions.find(opt => opt.value === selectedShiftId) || null}
+                onChange={(opt) => {
+                  setSelectedShiftId(opt?.value as string || '');
+                  setSelectedResponder('');
+                }}
+                options={shiftOptions}
+                placeholder="Choose a shift"
+              />
+              {selectedShiftData && (
+                <SelectResponder
+                  locationId={selectedShiftData.locationId}
+                  selectedUserId={selectedResponder}
+                  onSelect={setSelectedResponder}
+                />
+              )}
+            </>
           )}
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Cancel</Button>
             <Button
               onClick={handleCreateSwap}
-              disabled={!selectedShift || !selectedResponder}
+              disabled={!selectedShiftId || !selectedResponder || myShifts.length === 0}
               isLoading={isLoading}
               className="w-full sm:w-auto"
             >
@@ -134,19 +169,37 @@ export const CreateSwapRequest: React.FC<CreateSwapRequestProps> = ({
       label: 'Drop Shift',
       content: (
         <div className="space-y-4">
-          <Select
-            label="Select Shift"
-            value={shiftOptions.find(opt => opt.value === selectedShift) || null}
-            onChange={(opt) => setSelectedShift(opt?.value as string || '')}
-            options={shiftOptions}
-            placeholder="Choose a shift to drop"
-          />
-          {selectedShiftData && (
-            <DropShift
-              shift={selectedShiftData}
-              onSubmit={handleCreateDrop}
-              onCancel={onClose}
-            />
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+          {isFetching ? (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500" />
+            </div>
+          ) : myShifts.length === 0 ? emptyState : (
+            <>
+              <Select
+                label="Select Shift to Drop"
+                value={shiftOptions.find(opt => opt.value === selectedShiftId) || null}
+                onChange={(opt) => setSelectedShiftId(opt?.value as string || '')}
+                options={shiftOptions}
+                placeholder="Choose a shift"
+              />
+              {selectedShiftData && (
+                <DropShift
+                  shift={selectedShiftData}
+                  onSubmit={handleCreateDrop}
+                  onCancel={onClose}
+                />
+              )}
+            </>
+          )}
+          {!selectedShiftData && myShifts.length > 0 && (
+            <div className="flex justify-end pt-4">
+              <Button variant="outline" onClick={onClose}>Cancel</Button>
+            </div>
           )}
         </div>
       ),
@@ -155,7 +208,11 @@ export const CreateSwapRequest: React.FC<CreateSwapRequestProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Request Shift Change" size="lg">
-      <Tabs tabs={tabs} defaultTab={activeTab} onChange={(tab) => setActiveTab(tab as 'SWAP' | 'DROP')} />
+      <Tabs
+        tabs={tabs}
+        defaultTab={activeTab}
+        onChange={(tab) => setActiveTab(tab as 'SWAP' | 'DROP')}
+      />
     </Modal>
   );
 };

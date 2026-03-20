@@ -31,6 +31,14 @@ export const StaffSkills: React.FC<StaffSkillsProps> = ({
     return new Date(expiresAt) < new Date();
   };
 
+  // Backend returns certifications with nested skill/location objects
+  // Handle both shapes: cert.skillName (old) and cert.skill?.name (new)
+  const getSkillName = (cert: any) =>
+    cert.skillName || cert.skill?.name || '—';
+
+  const getLocationName = (cert: any) =>
+    cert.locationName || cert.location?.name || '—';
+
   return (
     <Card>
       <div className="flex justify-between items-center mb-4">
@@ -39,14 +47,14 @@ export const StaffSkills: React.FC<StaffSkillsProps> = ({
       </div>
 
       <div className="space-y-3">
-        {staff.certifications?.map((cert) => (
+        {staff.certifications?.map((cert: any) => (
           <div
             key={cert.id}
             className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
           >
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-medium text-gray-900">{cert.skillName}</span>
+                <span className="font-medium text-gray-900">{getSkillName(cert)}</span>
                 {isExpired(cert.expiresAt) && (
                   <Badge variant="error" size="sm">Expired</Badge>
                 )}
@@ -55,7 +63,7 @@ export const StaffSkills: React.FC<StaffSkillsProps> = ({
                 )}
               </div>
               <div className="text-sm text-gray-500 mt-1 flex flex-wrap gap-3">
-                <span>📍 {cert.locationName}</span>
+                <span>📍 {getLocationName(cert)}</span>
                 {cert.expiresAt && (
                   <span>📅 Expires {new Date(cert.expiresAt).toLocaleDateString()}</span>
                 )}

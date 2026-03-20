@@ -128,24 +128,25 @@ export default function SwapsPage() {
       );
     }
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filtered.map((request) => (
-          <SwapRequestCard
-            key={request.id}
-            request={request}
-            userRole={user?.role || ''}
-            userId={user?.id || ''}
-            onRespond={handleRespond}
-            onApprove={(id) => {
-              const req = requests.find(r => r.id === id);
-              if (req) {
-                setSelectedRequest(req);
-                setIsApprovalOpen(true);
-              }
-            }}
-            onCancel={handleCancel}
-            onViewShift={(shiftId) => router.push(isStaff ? '/staff/schedule' : '/schedule')}
-          />
+          <div key={request.id} className="w-full">
+            <SwapRequestCard
+              request={request}
+              userRole={user?.role || ''}
+              userId={user?.id || ''}
+              onRespond={handleRespond}
+              onApprove={(id) => {
+                const req = requests.find(r => r.id === id);
+                if (req) {
+                  setSelectedRequest(req);
+                  setIsApprovalOpen(true);
+                }
+              }}
+              onCancel={handleCancel}
+              onViewShift={(shiftId) => router.push(isStaff ? '/staff/schedule' : '/schedule')}
+            />
+          </div>
         ))}
       </div>
     );

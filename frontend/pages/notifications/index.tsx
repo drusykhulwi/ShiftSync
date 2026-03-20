@@ -36,30 +36,34 @@ export default function NotificationsPage() {
       id: 'all',
       label: `All (${notifications.length})`,
       content: (
-        <NotificationList
-          notifications={filteredNotifications}
-          onNotificationClick={async (notification) => {
-            if (!notification.isRead) {
-              await notificationsService.markAsRead(notification.id);
-              refresh();
-            }
-          }}
-        />
+        <div className="max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+          <NotificationList
+            notifications={filteredNotifications}
+            onNotificationClick={async (notification) => {
+              if (!notification.isRead) {
+                await notificationsService.markAsRead(notification.id);
+                refresh();
+              }
+            }}
+          />
+        </div>
       ),
     },
     {
       id: 'unread',
       label: `Unread (${unreadCount})`,
       content: (
-        <NotificationList
-          notifications={filteredNotifications}
-          onNotificationClick={async (notification) => {
-            if (!notification.isRead) {
-              await notificationsService.markAsRead(notification.id);
-              refresh();
-            }
-          }}
-        />
+        <div className="max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+          <NotificationList
+            notifications={filteredNotifications}
+            onNotificationClick={async (notification) => {
+              if (!notification.isRead) {
+                await notificationsService.markAsRead(notification.id);
+                refresh();
+              }
+            }}
+          />
+        </div>
       ),
     },
     {

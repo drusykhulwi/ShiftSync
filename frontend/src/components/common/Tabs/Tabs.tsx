@@ -26,8 +26,8 @@ export const Tabs: React.FC<TabsProps> = ({
 
   return (
     <div>
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+      <div className="border-b border-gray-200 overflow-x-auto overflow-y-hidden whitespace-nowrap scrollbar-hide">
+        <nav className="flex -mb-px space-x-8 px-4 sm:px-0" aria-label="Tabs">
           {tabs.map((tab) => (
             <button
               key={tab.id}

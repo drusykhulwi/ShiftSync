@@ -26,11 +26,12 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({ staff 
     setIsLoading(true);
     try {
       const response = await apiClient.get(`/users/${staff.id}/availability`);
-      const data = (response as any).data?.data || (response as any).data || [];
+      // Response is triple-wrapped: { success, data: { success, data: [...] } }
+      const raw = (response as any).data;
+      const data = raw?.data?.data || raw?.data || raw || [];
       setAvailability(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to fetch availability:', error);
-      // Start with empty availability if fetch fails
       setAvailability([]);
     } finally {
       setIsLoading(false);
@@ -78,7 +79,7 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({ staff 
           )}
           <WeeklyAvailability
             availability={availability}
-            onChange={(newAvailability) => setAvailability(newAvailability)}
+            onChange={setAvailability}
             onSave={handleSave}
             isSaving={isSaving}
           />

@@ -49,13 +49,15 @@ export const Modal: React.FC<ModalProps> = ({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className={`w-full ${sizeClasses[size]} transform overflow-hidden rounded-lg bg-white p-6 shadow-xl transition-all`}>
+              <Dialog.Panel className={`w-full ${sizeClasses[size]} transform overflow-hidden rounded-lg bg-white shadow-xl transition-all`}>
                 {title && (
-                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900 mb-4">
+                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900 p-6 pb-0">
                     {title}
                   </Dialog.Title>
                 )}
-                {children}
+                <div className="max-h-[calc(100vh-200px)] overflow-y-auto p-6">
+                  {children}
+                </div>
               </Dialog.Panel>
             </Transition.Child>
           </div>

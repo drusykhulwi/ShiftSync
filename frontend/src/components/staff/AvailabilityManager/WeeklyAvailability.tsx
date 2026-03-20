@@ -3,19 +3,30 @@ import React, { useState, useEffect } from 'react';
 import { AvailabilityBlock } from './AvailabilityBlock';
 import { Button } from '../../common/Button';
 
+interface DayAvailability {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+  isRecurring?: boolean;
+}
+
 interface WeeklyAvailabilityProps {
-  availability: {
-    dayOfWeek: number;
-    startTime: string;
-    endTime: string;
-    isAvailable: boolean;
-  }[];
-  onChange: (availability: any[]) => void;
-  onSave?: (availability: any[]) => Promise<void>;
+  availability: DayAvailability[];
+  onChange: (availability: DayAvailability[]) => void;
+  onSave?: (availability: DayAvailability[]) => Promise<void>;
   isSaving?: boolean;
 }
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+const defaultDay = (index: number): DayAvailability => ({
+  dayOfWeek: index,
+  startTime: '09:00',
+  endTime: '17:00',
+  isAvailable: index >= 1 && index <= 5,
+  isRecurring: true,
+});
 
 export const WeeklyAvailability: React.FC<WeeklyAvailabilityProps> = ({
   availability,
@@ -23,41 +34,26 @@ export const WeeklyAvailability: React.FC<WeeklyAvailabilityProps> = ({
   onSave,
   isSaving,
 }) => {
-  const [localAvailability, setLocalAvailability] = useState(
+  const buildLocal = (avail: DayAvailability[]) =>
     DAYS.map((_, index) => {
-      const existing = availability.find(a => a.dayOfWeek === index);
-      return existing || {
-        dayOfWeek: index,
-        startTime: '09:00',
-        endTime: '17:00',
-        isAvailable: index >= 1 && index <= 5,
-      };
-    })
-  );
+      const existing = avail.find(a => a.dayOfWeek === index);
+      return existing
+        ? { ...existing, isRecurring: true }
+        : defaultDay(index);
+    });
 
-  // Sync when parent availability loads (after API fetch)
+  const [localAvailability, setLocalAvailability] = useState(() => buildLocal(availability));
+
+  // Sync when parent loads data from API
   useEffect(() => {
     if (availability.length > 0) {
-      setLocalAvailability(
-        DAYS.map((_, index) => {
-          const existing = availability.find(a => a.dayOfWeek === index);
-          return existing || {
-            dayOfWeek: index,
-            startTime: '09:00',
-            endTime: '17:00',
-            isAvailable: index >= 1 && index <= 5,
-          };
-        })
-      );
+      setLocalAvailability(buildLocal(availability));
     }
   }, [availability]);
 
   const handleToggle = (dayIndex: number) => {
     const updated = [...localAvailability];
-    updated[dayIndex] = {
-      ...updated[dayIndex],
-      isAvailable: !updated[dayIndex].isAvailable,
-    };
+    updated[dayIndex] = { ...updated[dayIndex], isAvailable: !updated[dayIndex].isAvailable };
     setLocalAvailability(updated);
   };
 
@@ -71,25 +67,13 @@ export const WeeklyAvailability: React.FC<WeeklyAvailabilityProps> = ({
   };
 
   const handleSave = async () => {
-    const toSave = localAvailability.map(a => ({
-      ...a,
-      isRecurring: true, // weekly availability is always recurring
-    }));
-    onChange(toSave.filter(a => a.isAvailable));
-    // Call the actual API save if provided
-    if (onSave) {
-      await onSave(toSave);
-    }
+    const toSave = localAvailability.map(a => ({ ...a, isRecurring: true }));
+    onChange(toSave);
+    if (onSave) await onSave(toSave);
   };
 
   const setDefaultHours = () => {
-    const updated = localAvailability.map((a, index) => ({
-      ...a,
-      startTime: '09:00',
-      endTime: '17:00',
-      isAvailable: index >= 1 && index <= 5,
-    }));
-    setLocalAvailability(updated);
+    setLocalAvailability(DAYS.map((_, index) => defaultDay(index)));
   };
 
   return (
